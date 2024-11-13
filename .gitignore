@@ -1,3 +1,9 @@
+SDL*
+test/nemo*
+*.gb
+*.log
+.vscode/
+
 # Prerequisites
 *.d
 
