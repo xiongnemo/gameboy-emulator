@@ -73,7 +73,7 @@ enum RegisterPair
     AF = 0x00,
     BC = 0x01,
     DE = 0x02,
-    HL = 0x03
+    HL = 0x03,
 };
 
 enum Register
@@ -138,7 +138,15 @@ struct Registers
     uint16_t (*get_control_register)(struct Registers *, enum ControlRegister);
     void (*set_control_register)(struct Registers *, enum ControlRegister, uint16_t);
     uint8_t (*get_flag)(struct Registers *, enum Flag);
+    bool (*get_flag_z)(struct Registers *);
+    bool (*get_flag_n)(struct Registers *);
+    bool (*get_flag_h)(struct Registers *);
+    bool (*get_flag_c)(struct Registers *);
     void (*set_flag)(struct Registers *, enum Flag, bool);
+    void (*set_flag_z)(struct Registers *, bool);
+    void (*set_flag_n)(struct Registers *, bool);
+    void (*set_flag_h)(struct Registers *, bool);
+    void (*set_flag_c)(struct Registers *, bool);
 };
 
 // Register methods
@@ -152,6 +160,14 @@ uint16_t get_control_register(struct Registers *registers, enum ControlRegister 
 void set_control_register(struct Registers *registers, enum ControlRegister reg, uint16_t value);
 // flags methods
 uint8_t get_flag(struct Registers *registers, enum Flag flag);
+bool get_flag_z(struct Registers *registers);
+bool get_flag_n(struct Registers *registers);
+bool get_flag_h(struct Registers *registers);
+bool get_flag_c(struct Registers *registers);
 void set_flag(struct Registers *registers, enum Flag flag, bool value);
+void set_flag_z(struct Registers *registers, bool value);
+void set_flag_n(struct Registers *registers, bool value);
+void set_flag_h(struct Registers *registers, bool value);
+void set_flag_c(struct Registers *registers, bool value);
 
 #endif

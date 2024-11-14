@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 
     // bring up vram
     DMG_DEBUG_PRINT("Bringing up vram...%s", "\n");
-    struct VRam* vram = create_vram();
+    struct Vram* vram = create_vram();
     
     // bring up ppu
     DMG_DEBUG_PRINT("Bringing up ppu...%s", "\n");

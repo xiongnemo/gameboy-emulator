@@ -34,6 +34,8 @@ extern struct EmulatorConfig config;
 #define DEBUG_LEVEL 2
 #define TRACE_LEVEL 3
 
+#define UNDEFINED 0xFF
+
 // Regular Colors
 #define ANSI_COLOR_BLACK   "\x1b[30m"
 #define ANSI_COLOR_RED     "\x1b[31m"

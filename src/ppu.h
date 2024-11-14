@@ -100,7 +100,7 @@ struct PPU {
     // Internal state
     uint32_t dot_clock;
     uint8_t mode;
-    struct VRam* vram;
+    struct Vram* vram;
     uint32_t framebuffer[160 * 144]; // Screen resolution 160x144
 
     // Method pointers
@@ -115,7 +115,7 @@ void ppu_step(struct PPU* self, uint8_t cycles);
 void ppu_render_scanline(struct PPU* self);
 void ppu_update_stat(struct PPU* self);
 bool ppu_is_lcd_enabled(struct PPU* self);
-struct PPU* create_ppu(struct VRam* vram);
+struct PPU* create_ppu(struct Vram* vram);
 void free_ppu(struct PPU* ppu);
 
 #endif

@@ -37,7 +37,15 @@ struct Registers* create_registers() {
     registers->get_control_register = get_control_register;
     registers->set_control_register = set_control_register;
     registers->get_flag = get_flag;
+    registers->get_flag_z = get_flag_z;
+    registers->get_flag_n = get_flag_n;
+    registers->get_flag_h = get_flag_h;
+    registers->get_flag_c = get_flag_c;
     registers->set_flag = set_flag;
+    registers->set_flag_z = set_flag_z;
+    registers->set_flag_n = set_flag_n;
+    registers->set_flag_h = set_flag_h;
+    registers->set_flag_c = set_flag_c;
 
     return registers;
 }
@@ -87,6 +95,22 @@ uint8_t get_flag(struct Registers *registers, enum Flag flag) {
     return (registers->reg_primary[F] & flag) != 0;
 }
 
+bool get_flag_z(struct Registers *registers) {
+    return get_flag(registers, Flag_Z);
+}
+
+bool get_flag_n(struct Registers *registers) {
+    return get_flag(registers, Flag_N);
+}
+
+bool get_flag_h(struct Registers *registers) {
+    return get_flag(registers, Flag_H);
+}
+
+bool get_flag_c(struct Registers *registers) {
+    return get_flag(registers, Flag_C);
+}
+
 void set_flag(struct Registers *registers, enum Flag flag, bool value) {
     REGISTER_TRACE_PRINT("SET_FLAG: flag: %d, value: 0x%01x\n", flag, value);
     if (value) {
@@ -96,3 +120,18 @@ void set_flag(struct Registers *registers, enum Flag flag, bool value) {
     }
 }
 
+void set_flag_z(struct Registers *registers, bool value) {
+    set_flag(registers, Flag_Z, value);
+}
+
+void set_flag_n(struct Registers *registers, bool value) {
+    set_flag(registers, Flag_N, value);
+}
+
+void set_flag_h(struct Registers *registers, bool value) {
+    set_flag(registers, Flag_H, value);
+}
+
+void set_flag_c(struct Registers *registers, bool value) {
+    set_flag(registers, Flag_C, value);
+}

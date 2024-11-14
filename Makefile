@@ -57,26 +57,40 @@ FORM_TEST=test/nemo-sdl-create-form
 RAM_TEST=test/ram-test
 CARTRIDGE_TEST=test/cartridge-test
 REGISTER_TEST=test/register-test
+CPU_TEST=test/cpu-test
 
 all: $(DMG)
-	$(CC) $(DMG) -o dmg.exe $(SDL_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
+	$(CC) $(DMG) -o dmg $(SDL_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-test: ram-test cartridge-test register-test
+test: ram-test cartridge-test register-test cpu-test
 
-ram-test: $(RAM_TEST).c $(RAM)
-	$(CC) $(RAM_TEST).c $(RAM) -o $(RAM_TEST).exe $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+ram-test-build: $(RAM_TEST).c $(RAM)
+	$(CC) $(RAM_TEST).c $(RAM) -o $(RAM_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+ram-test: ram-test-build
 	./$(RAM_TEST)
 	echo "Ram test passed"
 
-cartridge-test: $(CARTRIDGE_TEST).c $(CARTRIDGE)
-	$(CC) $(CARTRIDGE_TEST).c $(CARTRIDGE) -o $(CARTRIDGE_TEST).exe $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+cartridge-test-build: $(CARTRIDGE_TEST).c $(CARTRIDGE)	
+	$(CC) $(CARTRIDGE_TEST).c $(CARTRIDGE) -o $(CARTRIDGE_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+cartridge-test: cartridge-test-build
 	./$(CARTRIDGE_TEST)
 	echo "Cartridge test passed"
 
-register-test: $(REGISTER_TEST).c $(REGISTER)
-	$(CC) $(REGISTER_TEST).c $(REGISTER) -o $(REGISTER_TEST).exe $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+register-test-build: $(REGISTER_TEST).c $(REGISTER)	
+	$(CC) $(REGISTER_TEST).c $(REGISTER) -o $(REGISTER_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+register-test: register-test-build
 	./$(REGISTER_TEST)
 	echo "Register test passed"
+
+cpu-test-build: $(CPU_TEST).c $(CPU) $(REGISTER) $(MMU) $(CARTRIDGE) $(RAM) $(VRAM) $(TIMER) $(PPU)
+	$(CC) $(CPU_TEST).c $(CPU) $(REGISTER) $(MMU) $(CARTRIDGE) $(RAM) $(VRAM) $(TIMER) $(PPU) -o $(CPU_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+cpu-test: cpu-test-build
+	./$(CPU_TEST)
+	echo "CPU test passed"
 
 define delete_executables_by_name
 	$(foreach exe, $(1), rm -f $(exe); rm -f $(exe).exe;)

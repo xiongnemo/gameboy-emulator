@@ -77,7 +77,7 @@ bool ppu_is_lcd_enabled(struct PPU* self) {
     return (self->lcdc & LCDC_ENABLE) != 0;
 }
 
-struct PPU* create_ppu(struct VRam* vram) {
+struct PPU* create_ppu(struct Vram* vram) {
     struct PPU* ppu = (struct PPU*)malloc(sizeof(struct PPU));
     
     // Initialize registers

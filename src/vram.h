@@ -60,24 +60,24 @@ extern struct EmulatorConfig config;
         printf(fmt, ##__VA_ARGS__);     \
     }
 
-struct VRam
+struct Vram
 {
     // Data members
     uint8_t vram_byte[VRAM_SIZE];
 
     // Method pointers
-    uint8_t (*get_vram_byte)(struct VRam *, uint16_t);
-    void (*set_vram_byte)(struct VRam *, uint16_t, uint8_t);
-    uint16_t (*get_vram_word)(struct VRam *, uint16_t);
-    void (*set_vram_word)(struct VRam *, uint16_t, uint16_t);
+    uint8_t (*get_vram_byte)(struct Vram *, uint16_t);
+    void (*set_vram_byte)(struct Vram *, uint16_t, uint8_t);
+    uint16_t (*get_vram_word)(struct Vram *, uint16_t);
+    void (*set_vram_word)(struct Vram *, uint16_t, uint16_t);
 };
 
 // Function declarations
-uint8_t vram_get_byte(struct VRam *self, uint16_t address);
-void vram_set_byte(struct VRam *self, uint16_t address, uint8_t byte);
-uint16_t vram_get_word(struct VRam *self, uint16_t address);
-void vram_set_word(struct VRam *self, uint16_t address, uint16_t word);
-struct VRam *create_vram(void);
-void free_vram(struct VRam *self);
+uint8_t vram_get_byte(struct Vram *self, uint16_t address);
+void vram_set_byte(struct Vram *self, uint16_t address, uint8_t byte);
+uint16_t vram_get_word(struct Vram *self, uint16_t address);
+void vram_set_word(struct Vram *self, uint16_t address, uint16_t word);
+struct Vram *create_vram(void);
+void free_vram(struct Vram *self);
 
 #endif
