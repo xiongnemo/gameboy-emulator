@@ -74,12 +74,22 @@ extern struct EmulatorConfig config;
 
 typedef uint8_t (*instruction_fn)(struct CPU *, struct InstructionParam *);
 
+enum JumpCondition
+{
+    JumpCondition_NZ = 0x00,
+    JumpCondition_Z = 0x01,
+    JumpCondition_NC = 0x02,
+    JumpCondition_C = 0x03
+};
+
+
 struct InstructionParam
 {
     enum Register reg_1;
     enum Register reg_2;
     enum RegisterPair rp_1;
     enum RegisterPair rp_2;
+    enum JumpCondition cc;
     uint8_t value;
 };
 
@@ -192,75 +202,77 @@ uint8_t cpu_step_read_byte(struct CPU *cpu);
 // Read word from MMU
 uint16_t cpu_step_read_word(struct CPU *cpu);
 
-// abort when invalid opcode is executed
-void cpu_invalid_opcode(struct CPU *cpu);
-
 // instruction methods
+
+#define EXECUABLE_INSTRUCTION(fn_name) uint8_t fn_name(struct CPU *cpu, struct InstructionParam *param)
+
+// abort when invalid opcode is executed
+EXECUABLE_INSTRUCTION(cpu_invalid_opcode);
 
 // LD
 
 // 8-bit load instructions
 
 // Load immediate value to register
-void ld_imm_to_register(struct CPU *cpu, enum Register to_register);
+EXECUABLE_INSTRUCTION(ld_imm_to_register);
 
 // Load register value to immediate value
-void ld_register_to_imm(struct CPU *cpu, enum Register from_register);
+EXECUABLE_INSTRUCTION(ld_register_to_imm);
 
 // Load register value to register
-void ld_register_to_register(struct CPU *cpu, enum Register from_register, enum Register to_register);
+EXECUABLE_INSTRUCTION(ld_register_to_register);
 
 // Load address value to register
-void ld_address_register_pair_to_register(struct CPU *cpu, struct InstructionParam *param);
+EXECUABLE_INSTRUCTION(ld_address_register_pair_to_register);
 
 // Load register value to address
-void ld_register_to_address_register_pair(struct CPU *cpu, struct InstructionParam *param);
+EXECUABLE_INSTRUCTION(ld_register_to_address_register_pair);
 
 // Load value from register A to zero page address with register C
-void ld_register_a_to_zero_page_address_c(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_register_a_to_zero_page_address_c);
 
 // Load value from zero page address with register C to register A
-void ld_zero_page_address_c_to_register_a(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_zero_page_address_c_to_register_a);
 
 // load value from address HL to register A, increment HL
-void ld_address_hl_to_register_a_inc_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_address_hl_to_register_a_inc_hl);
 
 // load value from register A to address HL, increment HL
-void ld_register_a_to_address_hl_inc_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_register_a_to_address_hl_inc_hl);
 
 // load value from address HL to register A, decrement HL
-void ld_address_hl_to_register_a_dec_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_address_hl_to_register_a_dec_hl);
 
 // load value from register A to address HL, decrement HL
-void ld_register_a_to_address_hl_dec_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_register_a_to_address_hl_dec_hl);
 
 // load value from register A to zero page address with immediate value
-void ld_register_a_to_zero_page_address_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_register_a_to_zero_page_address_imm);
 
 // load value from zero page address with immediate value to register A
-void ld_zero_page_address_imm_to_register_a(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_zero_page_address_imm_to_register_a);
 
 // 16-bit load instructions
 
 // load value from immediate value to register pair
-void ld_imm_to_register_pair(struct CPU *cpu, struct InstructionParam *param);
+EXECUABLE_INSTRUCTION(ld_imm_to_register_pair);
 
 // load from HL to SP
-void ld_hl_to_sp(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_hl_to_sp);
 
 // load SP + one byte signed immediate value to HL
-void ld_sp_imm_to_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_sp_imm_to_hl);
 
 // Load SP to immediate value address
-void ld_sp_to_address_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ld_sp_to_address_imm);
 
 // 16-bit stack instructions
 
 // push register pair to stack
-void push_register_pair(struct CPU *cpu, enum RegisterPair register_pair);
+EXECUABLE_INSTRUCTION(push_register_pair);
 
 // pop register pair from stack
-void pop_register_pair(struct CPU *cpu, enum RegisterPair register_pair);
+EXECUABLE_INSTRUCTION(pop_register_pair);
 
 // 8-bit ALU instructions
 
@@ -271,16 +283,16 @@ void pop_register_pair(struct CPU *cpu, enum RegisterPair register_pair);
 // N: Reset
 // H: Set if carry from bit 3 to bit 4
 // C: Set if carry from bit 7 to bit 8
-void add_a(struct CPU *cpu);
+void add_a(struct CPU *cpu, uint8_t *value);
 
 // add value from immediate value to register A
-void add_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(add_a_imm);
 
 // add value from register ? to register A
-void add_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(add_a_register);
 
 // add value from address HL to register A
-void add_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(add_a_address_hl);
 
 // ADC
 // add value from register A and carry flag to register A
@@ -289,16 +301,16 @@ void add_a_address_hl(struct CPU *cpu);
 // N: Reset
 // H: Set if carry from bit 3 to bit 4
 // C: Set if carry from bit 7 to bit 8
-void adc_a(struct CPU *cpu);
+void adc_a(struct CPU *cpu, uint8_t *value);
 
 // add value from immediate value to register A and carry flag
-void adc_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(adc_a_imm);
 
 // add value from register ? to register A and carry flag
-void adc_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(adc_a_register);
 
 // add value from address HL to register A and carry flag
-void adc_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(adc_a_address_hl);
 
 // SUB
 // subtract n from register A
@@ -307,16 +319,16 @@ void adc_a_address_hl(struct CPU *cpu);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Set if no borrow
-void sub_a(struct CPU *cpu);
+void sub_a(struct CPU *cpu, uint8_t *value);
 
 // subtract value from immediate value from register A
-void sub_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sub_a_imm);
 
 // subtract value from register ? from register A
-void sub_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(sub_a_register);
 
 // subtract value from address HL from register A
-void sub_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sub_a_address_hl);
 
 // SBC
 // subtract value from register A and carry flag from register A
@@ -325,16 +337,16 @@ void sub_a_address_hl(struct CPU *cpu);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Set if no borrow
-void sbc_a(struct CPU *cpu);
+void sbc_a(struct CPU *cpu, uint8_t *value);
 
 // subtract value from immediate value from register A and carry flag
-void sbc_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sbc_a_imm);
 
 // subtract value from register ? from register A and carry flag
-void sbc_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(sbc_a_register);
 
 // subtract value from address HL from register A and carry flag
-void sbc_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sbc_a_address_hl);
 
 // AND
 // logically AND n with register A, result in register A
@@ -343,16 +355,16 @@ void sbc_a_address_hl(struct CPU *cpu);
 // N: Reset
 // H: Set
 // C: Reset
-void and_a(struct CPU *cpu);
+void and_a(struct CPU *cpu, uint8_t *value);
 
 // logically AND immediate value with register A, result in register A
-void and_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(and_a_imm);
 
 // logically AND register ? with register A, result in register A
-void and_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(and_a_register);
 
 // logically AND address HL with register A, result in register A
-void and_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(and_a_address_hl);
 
 // OR
 // logically OR n with register A, result in register A
@@ -361,16 +373,16 @@ void and_a_address_hl(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Reset
-void or_a(struct CPU *cpu);
+void or_a(struct CPU *cpu, uint8_t *value);
 
 // logically OR immediate value with register A, result in register A
-void or_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(or_a_imm);
 
 // logically OR register ? with register A, result in register A
-void or_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(or_a_register);
 
 // logically OR address HL with register A, result in register A
-void or_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(or_a_address_hl);
 
 // XOR
 // logically XOR n with register A, result in register A
@@ -382,13 +394,13 @@ void or_a_address_hl(struct CPU *cpu);
 void xor_a(struct CPU *cpu);
 
 // logically XOR immediate value with register A, result in register A
-void xor_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(xor_a_imm);
 
 // logically XOR register ? with register A, result in register A
-void xor_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(xor_a_register);
 
 // logically XOR address HL with register A, result in register A
-void xor_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(xor_a_address_hl);
 
 // CP
 // compare register A with n
@@ -400,13 +412,13 @@ void xor_a_address_hl(struct CPU *cpu);
 void cp_a(struct CPU *cpu);
 
 // compare immediate value with register A
-void cp_a_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(cp_a_imm);
 
 // compare register ? with register A
-void cp_a_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(cp_a_register);
 
 // compare address HL with register A
-void cp_a_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(cp_a_address_hl);
 
 // INC
 // increment
@@ -418,10 +430,10 @@ void cp_a_address_hl(struct CPU *cpu);
 void inc(struct CPU *cpu, uint8_t *value);
 
 // INC r
-void inc_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(inc_register);
 
 // INC HL
-void inc_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(inc_address_hl);
 
 // DEC
 // decrement
@@ -433,10 +445,10 @@ void inc_address_hl(struct CPU *cpu);
 void dec(struct CPU *cpu, uint8_t *value);
 
 // DEC r
-void dec_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(dec_register);
 
 // DEC HL
-void dec_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(dec_address_hl);
 
 // 16-bit ALU instructions
 
@@ -447,7 +459,7 @@ void dec_address_hl(struct CPU *cpu);
 // N: Reset
 // H: Set if carry from bit 11 to bit 12
 // C: Set if carry from bit 15 to bit 16
-void add_hl_rr(struct CPU *cpu, enum RegisterPair rr);
+EXECUABLE_INSTRUCTION(add_hl_rr);
 
 // ADD SP, n
 // add one byte signed immediate value to SP
@@ -456,7 +468,7 @@ void add_hl_rr(struct CPU *cpu, enum RegisterPair rr);
 // N: Reset
 // H: Set if carry from bit 11 to bit 12
 // C: Set if carry from bit 15 to bit 16
-void add_sp_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(add_sp_imm);
 
 // INC nn
 // increment register
@@ -465,10 +477,10 @@ void add_sp_imm(struct CPU *cpu);
 void inc_16_bit(struct CPU *cpu, uint16_t *value);
 
 // increment register pair
-void inc_register_pair(struct CPU *cpu, struct InstructionParam *param);
+EXECUABLE_INSTRUCTION(inc_register_pair);
 
 // increment SP
-void inc_sp(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(inc_sp);
 
 // DEC nn
 // decrement register
@@ -477,10 +489,10 @@ void inc_sp(struct CPU *cpu);
 void dec_16_bit(struct CPU *cpu, uint16_t *value);
 
 // decrement register pair
-void dec_register_pair(struct CPU *cpu, enum RegisterPair register_pair);
+EXECUABLE_INSTRUCTION(dec_register_pair);
 
 // decrement SP
-void dec_sp(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(dec_sp);
 
 // 8-bit bit manipulation instructions
 
@@ -494,10 +506,10 @@ void dec_sp(struct CPU *cpu);
 void swap(struct CPU *cpu, uint8_t *value);
 
 // swap lower and upper nibbles of a register
-void swap_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(swap_register);
 
 // swap lower and upper nibbles of a value at address HL
-void swap_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(swap_address_hl);
 
 // DAA
 // decimal adjust register A
@@ -506,7 +518,7 @@ void swap_address_hl(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Set if carry from bit 7 to bit 8
-void daa(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(daa);
 
 // CPL
 // complement register A (Flip all bits)
@@ -515,7 +527,7 @@ void daa(struct CPU *cpu);
 // N: Set
 // H: Set
 // C: Not affected
-void cpl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(cpl);
 
 // CCF
 // complement carry flag
@@ -526,7 +538,7 @@ void cpl(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Complemented
-void ccf(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ccf);
 
 // SCF
 // set carry flag
@@ -535,29 +547,29 @@ void ccf(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Set
-void scf(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(scf);
 
 // NOP
 // No operation
-void nop(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(nop);
 
 // HALT
 // Halt the CPU
-void halt(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(halt);
 
 // STOP
 // Halt CPU and LCD until button is pressed
-void stop(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(stop);
 
 // DI
 // Disable interrupts but not immediate
 // Interrupt will be disabled after the current instruction (after DI is executed)
-void di(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(di);
 
 // EI
 // Enable interrupts but not immediate
 // Interrupt will be enabled after the current instruction (after EI is executed)
-void ei(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ei);
 
 // 8-bit Rotate and Shift instructions
 
@@ -568,7 +580,7 @@ void ei(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-void rlca(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rlca);
 
 // RLA
 // rotate register A left through carry flag
@@ -577,7 +589,7 @@ void rlca(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-void rla(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rla);
 
 // RRCA
 // rotate register A right, old bit 0 to carry flag
@@ -586,7 +598,7 @@ void rla(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-void rrca(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rrca);
 
 // RRA
 // rotate register A right through carry flag
@@ -595,7 +607,7 @@ void rrca(struct CPU *cpu);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-void rra(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rra);
 
 // RLC
 // rotate left, old bit 7 to carry flag
@@ -607,10 +619,10 @@ void rra(struct CPU *cpu);
 void rlc(struct CPU *cpu, uint8_t *value);
 
 // RLC r
-void rlc_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(rlc_register);
 
 // RLC (HL)
-void rlc_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rlc_address_hl);
 
 // RL
 // rotate left through carry flag
@@ -622,10 +634,10 @@ void rlc_address_hl(struct CPU *cpu);
 void rl(struct CPU *cpu, uint8_t *value);
 
 // RL r
-void rl_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(rl_register);
 
 // RL (HL)
-void rl_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rl_address_hl);
 
 // RRC
 // rotate right, old bit 0 to carry flag
@@ -637,10 +649,10 @@ void rl_address_hl(struct CPU *cpu);
 void rrc(struct CPU *cpu, uint8_t *value);
 
 // RRC r
-void rrc_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(rrc_register);
 
 // RRC (HL)
-void rrc_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rrc_address_hl);
 
 // RR
 // rotate right through carry flag
@@ -652,10 +664,10 @@ void rrc_address_hl(struct CPU *cpu);
 void rr(struct CPU *cpu, uint8_t *value);
 
 // RR r
-void rr_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(rr_register);
 
 // RR (HL)
-void rr_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rr_address_hl);
 
 // SLA
 // shift left into carry flag, LSB of value set to 0
@@ -667,10 +679,10 @@ void rr_address_hl(struct CPU *cpu);
 void sla(struct CPU *cpu, uint8_t *value);
 
 // SLA r
-void sla_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(sla_register);
 
 // SLA (HL)
-void sla_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sla_address_hl);
 
 // SRA
 // shift right into carry flag, MSB doesn't change
@@ -682,10 +694,10 @@ void sla_address_hl(struct CPU *cpu);
 void sra(struct CPU *cpu, uint8_t *value);
 
 // SRA r
-void sra_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(sra_register);
 
 // SRA (HL)
-void sra_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(sra_address_hl);
 
 // SRL
 // shift right into carry flag, MSB set to 0
@@ -697,10 +709,10 @@ void sra_address_hl(struct CPU *cpu);
 void srl(struct CPU *cpu, uint8_t *value);
 
 // SRL r
-void srl_register(struct CPU *cpu, enum Register register);
+EXECUABLE_INSTRUCTION(srl_register);
 
 // SRL (HL)
-void srl_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(srl_address_hl);
 
 // bit operations
 
@@ -714,10 +726,10 @@ void srl_address_hl(struct CPU *cpu);
 void bit(struct CPU *cpu, uint8_t bit, uint8_t *value);
 
 // BIT b, r
-void bit_register(struct CPU *cpu, uint8_t bit, enum Register register);
+EXECUABLE_INSTRUCTION(bit_register);
 
 // BIT b, (HL)
-void bit_address_hl(struct CPU *cpu, uint8_t bit);
+EXECUABLE_INSTRUCTION(bit_address_hl);
 
 // SET b, n
 // set bit b of n
@@ -726,10 +738,10 @@ void bit_address_hl(struct CPU *cpu, uint8_t bit);
 void set(struct CPU *cpu, uint8_t bit, uint8_t *value);
 
 // SET b, r
-void set_register(struct CPU *cpu, uint8_t bit, enum Register register);
+EXECUABLE_INSTRUCTION(set_register);
 
 // SET b, (HL)
-void set_address_hl(struct CPU *cpu, uint8_t bit);
+EXECUABLE_INSTRUCTION(set_address_hl);
 
 // RES b, n
 // reset bit b of n
@@ -738,45 +750,37 @@ void set_address_hl(struct CPU *cpu, uint8_t bit);
 void res(struct CPU *cpu, uint8_t bit, uint8_t *value);
 
 // RES b, r
-void res_register(struct CPU *cpu, uint8_t bit, enum Register register);
+EXECUABLE_INSTRUCTION(res_register);
 
 // RES b, (HL)
-void res_address_hl(struct CPU *cpu, uint8_t bit);
+EXECUABLE_INSTRUCTION(res_address_hl);
 
 // 8-bit jump instructions
 
 // JP nn
 // jump to address nn
 // nn: 16-bit immediate value (LSB first)
-void jp_imm(struct CPU *cpu);
-
-enum JumpCondition
-{
-    JumpCondition_NZ = 0x00,
-    JumpCondition_Z = 0x01,
-    JumpCondition_NC = 0x02,
-    JumpCondition_C = 0x03
-};
+EXECUABLE_INSTRUCTION(jp_imm);
 
 // JP cc, nn
 // jump to address nn if condition cc is true
 // cc: JumpCondition
 // nn: 16-bit immediate value (LSB first)
-void jp_cc_imm(struct CPU *cpu, enum JumpCondition cc);
+EXECUABLE_INSTRUCTION(jp_cc_imm);
 
 // JP (HL)
-void jp_address_hl(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(jp_address_hl);
 
 // JR n
 // Add n to PC and jump to it
 // n: one byte signed immediate value
-void jr_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(jr_imm);
 
 // JR cc, n
 // Add n to PC and jump to it if condition cc is true
 // cc: JumpCondition
 // n: one byte signed immediate value
-void jr_cc_imm(struct CPU *cpu, enum JumpCondition cc);
+EXECUABLE_INSTRUCTION(jr_cc_imm);
 
 // Calls
 
@@ -785,7 +789,7 @@ void jr_cc_imm(struct CPU *cpu, enum JumpCondition cc);
 // Push address of next instruction to stack
 // then jump to address nn
 // nn: 16-bit immediate value (LSB first)
-void call_imm(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(call_imm);
 
 // CALL cc, nn
 // call subroutine at address nn if condition cc is true
@@ -793,7 +797,7 @@ void call_imm(struct CPU *cpu);
 // then jump to address nn
 // cc: JumpCondition
 // nn: 16-bit immediate value (LSB first)
-void call_cc_imm(struct CPU *cpu, enum JumpCondition cc);
+EXECUABLE_INSTRUCTION(call_cc_imm);
 
 // Restarts
 
@@ -804,28 +808,28 @@ void call_cc_imm(struct CPU *cpu, enum JumpCondition cc);
 void rst(struct CPU *cpu, uint8_t n);
 
 // 0x00
-void rst_00(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_00);
 
 // 0x08
-void rst_08(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_08);
 
 // 0x10
-void rst_10(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_10);
 
 // 0x18
-void rst_18(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_18);
 
 // 0x20
-void rst_20(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_20);
 
 // 0x28
-void rst_28(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_28);
 
 // 0x30
-void rst_30(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_30);
 
 // 0x38
-void rst_38(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(rst_38);
 
 // Returns
 
@@ -833,20 +837,20 @@ void rst_38(struct CPU *cpu);
 // return from subroutine
 // Pop two bytes (address) from stack to PC
 // and jump to it
-void ret(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(ret);
 
 // RET cc
 // return from subroutine if condition cc is true
 // Pop two bytes (address) from stack to PC
 // and jump to it if condition cc is true
 // cc: JumpCondition
-void ret_cc(struct CPU *cpu, enum JumpCondition cc);
+EXECUABLE_INSTRUCTION(ret_cc);
 
 // RETI
 // return from subroutine and enable interrupts
 // Pop two bytes (address) from stack to PC
 // and jump to it
 // then enable interrupts
-void reti(struct CPU *cpu);
+EXECUABLE_INSTRUCTION(reti);
 
 #endif

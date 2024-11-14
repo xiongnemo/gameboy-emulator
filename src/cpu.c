@@ -127,25 +127,26 @@ uint8_t cpu_step_execute_cb_op_code(struct CPU *cpu, uint8_t op_byte)
     return cpu->opcode_cycle_prefix_cb[op_byte];
 }
 
-void nop(struct CPU *cpu)
-{
-    CPU_DEBUG_PRINT("NOP\n");
-}
-
-void cpu_invalid_opcode(struct CPU *cpu, struct InstructionParam *param)
+EXECUABLE_INSTRUCTION(cpu_invalid_opcode)
 {
     CPU_EMERGENCY_PRINT("Invalid Opcode: %X\n", cpu->op_code);
     exit(EXIT_FAILURE);
 }
 
-void ld_imm_to_register_pair(struct CPU *cpu, struct InstructionParam *param)
+EXECUABLE_INSTRUCTION(nop)
+{
+    CPU_DEBUG_PRINT("NOP\n");
+}
+
+
+EXECUABLE_INSTRUCTION(ld_imm_to_register_pair)
 {
     enum RegisterPair register_pair = param->rp_1;
     uint16_t value = cpu_step_read_word(cpu);
     cpu->registers->set_register_pair(cpu->registers, register_pair, value);
 }
 
-void ld_register_to_address_register_pair(struct CPU *cpu, struct InstructionParam *param)
+EXECUABLE_INSTRUCTION(ld_register_to_address_register_pair)
 {
     enum Register from_register = param->reg_1;
     enum RegisterPair to_register_pair = param->rp_1;
@@ -154,7 +155,7 @@ void ld_register_to_address_register_pair(struct CPU *cpu, struct InstructionPar
     cpu->mmu->mmu_set_byte(cpu->mmu, mmu_address, value);
 }
 
-void inc_register_pair(struct CPU *cpu, struct InstructionParam *param)
+EXECUABLE_INSTRUCTION(inc_register_pair)
 {
     enum RegisterPair register_pair = param->rp_1;
     uint16_t value = cpu->registers->get_register_pair(cpu->registers, register_pair);
