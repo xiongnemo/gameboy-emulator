@@ -7,7 +7,7 @@ CC=gcc
 SDL_FLAGS=-ISDL3/include/ -LSDL3/lib/ -lSDL3
 
 # Compiler flags
-CC_FLAGS=-Wall -Wextra -pedantic -std=c17
+CC_FLAGS=-Wall -Wextra -pedantic -std=c2x
 CC_RELEASE_FLAGS=-O3
 CC_DEBUG_FLAGS=-g -DDEBUG
 
@@ -62,6 +62,9 @@ CPU_TEST=test/cpu-test
 all: $(DMG)
 	$(CC) $(DMG) -o dmg $(SDL_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
+debug: $(DMG)
+	$(CC) $(DMG) -o dmg $(SDL_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
 test: ram-test cartridge-test register-test cpu-test
 
 ram-test-build: $(RAM_TEST).c $(RAM)
@@ -91,6 +94,30 @@ cpu-test-build: $(CPU_TEST).c $(CPU) $(REGISTER) $(MMU) $(CARTRIDGE) $(RAM) $(VR
 cpu-test: cpu-test-build
 	./$(CPU_TEST)
 	echo "CPU test passed"
+
+run: all
+	echo "Running emulator"
+	./dmg $(filter-out $@,$(MAKECMDGOALS))
+
+run-warning: all
+	echo "Running emulator (with WARNING)"
+	./dmg $(filter-out $@,$(MAKECMDGOALS)) -d
+
+run-info: all
+	echo "Running emulator (with INFO)"
+	./dmg $(filter-out $@,$(MAKECMDGOALS)) -d -v
+
+run-debug: all
+	echo "Running emulator (with DEBUG)"
+	./dmg $(filter-out $@,$(MAKECMDGOALS)) -d -vv
+
+run-trace: all
+	echo "Running emulator (with TRACE)"
+	./dmg $(filter-out $@,$(MAKECMDGOALS)) -d -vvv
+
+run-cpu-test: all
+	echo "Running CPU test"
+	./dmg test/cpu.gb -d -vvv
 
 define delete_executables_by_name
 	$(foreach exe, $(1), rm -f $(exe); rm -f $(exe).exe;)

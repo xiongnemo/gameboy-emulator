@@ -14,7 +14,15 @@ struct Form* create_form(void)
     // get physical devices' resolution
     uint16_t physical_device_res_width = 0;
     uint16_t physical_device_res_height = 0;
-    SDL_DisplayMode* physical_device_display_mode = SDL_GetDesktopDisplayMode(0);
+    const SDL_DisplayMode* physical_device_display_mode = SDL_GetDesktopDisplayMode(0);
+    if (physical_device_display_mode == NULL)
+    {
+        // Call SDL_GetError() to get the error message
+        const char* error_message = SDL_GetError();
+        FORM_EMERGENCY_PRINT("Failed to get physical device display mode: %s\n", error_message);
+        free(form);
+        return NULL;
+    }
     physical_device_res_width = physical_device_display_mode->w;
     physical_device_res_height = physical_device_display_mode->h;
 

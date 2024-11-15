@@ -12,8 +12,10 @@ You should have SDL3 installed or accessible in your system.
 
 ### Run test
 
+#### (Windows) PowerShell & POSIX Shell
+
 ```sh
-make test > test.log
+make test > test.log 2>test.err.log
 ```
 
 ### Run emulator

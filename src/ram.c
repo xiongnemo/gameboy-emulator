@@ -36,7 +36,7 @@ struct Ram *create_ram(void)
     mem->get_ram_word = ram_get_word;
     mem->set_ram_word = ram_set_word;
     // Initialize ram array to 0
-    RAM_TRACE_PRINT("RAM_CREATE: Initializing ram array to 0\n");
+    RAM_TRACE_PRINT("RAM_CREATE: Initializing ram array to 0%s", "\n");
     memset(mem->ram_byte, 0, sizeof(mem->ram_byte));
     // set method pointers
     mem->get_ram_byte = ram_get_byte;

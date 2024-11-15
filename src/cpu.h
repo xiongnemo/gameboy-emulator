@@ -72,7 +72,8 @@ extern struct EmulatorConfig config;
 // CB Prefix
 #define CB_PREFIX 0xCB
 
-typedef uint8_t (*instruction_fn)(struct CPU *, struct InstructionParam *);
+struct CPU;
+struct InstructionParam;
 
 enum JumpCondition
 {
@@ -82,6 +83,7 @@ enum JumpCondition
     JumpCondition_C = 0x03,
 };
 
+// Instruction parameter
 struct InstructionParam
 {
     // Register 1
@@ -103,14 +105,15 @@ struct InstructionParam
     uint8_t value;
 };
 
+typedef void (*instruction_fn)(struct CPU *, struct InstructionParam *);
+
 /*
 * eg: PACKED_INSTRUCTION_PARAM(ld_imm_to_register_pair, {.rp_1 = BC})
 * This is used to initialize the instruction param
 * It should expand to ld_imm_to_register_pair, struct InstructionParam{.rp_1 = BC}
 */
 // #define PACKED_INSTRUCTION_PARAM(fn, param) fn, struct InstructionParam param
-
-typedef struct PackedInstructionParam
+struct PackedInstructionParam
 {
     instruction_fn fn;
     struct InstructionParam param;
@@ -150,7 +153,7 @@ struct CPU
 
 // initialize opcode cycle count
 //  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
-const static uint8_t opcode_cycle_main[256] = {
+static const uint8_t opcode_cycle_main[256] = {
     1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
     0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
     2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 2
@@ -171,7 +174,7 @@ const static uint8_t opcode_cycle_main[256] = {
 
 // initialize opcode cycle count for prefix CB
 //  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
-const static uint8_t opcode_cycle_prefix_cb[256] = {
+static const uint8_t opcode_cycle_prefix_cb[256] = {
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 0
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 1
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 2

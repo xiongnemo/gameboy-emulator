@@ -104,6 +104,10 @@ int main(int argc, char* argv[]) {
     // bring up cartridge
     DMG_DEBUG_PRINT("Bringing up cartridge...%s", "\n");
     struct Cartridge* cartridge = create_cartridge();
+    if (cartridge == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create cartridge\n");
+        exit(EXIT_FAILURE);
+    }
     DMG_DEBUG_PRINT("Loading cartridge from %s...%s", config.rom_path, "\n");
     if (!load_cartridge(cartridge, config.rom_path)) {
         DMG_EMERGENCY_PRINT("Failed to load cartridge\n");
@@ -113,30 +117,58 @@ int main(int argc, char* argv[]) {
     // bring up ram
     DMG_DEBUG_PRINT("Bringing up ram...%s", "\n");
     struct Ram* ram = create_ram();
+    if (ram == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create ram\n");
+        exit(EXIT_FAILURE);
+    }
 
     // bring up vram
     DMG_DEBUG_PRINT("Bringing up vram...%s", "\n");
     struct Vram* vram = create_vram();
+    if (vram == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create vram\n");
+        exit(EXIT_FAILURE);
+    }
     
     // bring up ppu
     DMG_DEBUG_PRINT("Bringing up ppu...%s", "\n");
     struct PPU* ppu = create_ppu(vram);
+    if (ppu == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create ppu\n");
+        exit(EXIT_FAILURE);
+    }
     
     // bring up mmu
     DMG_DEBUG_PRINT("Bringing up mmu...%s", "\n");
     struct MMU* mmu = create_mmu(cartridge, ram, ppu);
+    if (mmu == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create mmu\n");
+        exit(EXIT_FAILURE);
+    }
 
     // bring up registers
     DMG_DEBUG_PRINT("Bringing up registers...%s", "\n");
     struct Registers* registers = create_registers();
+    if (registers == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create registers\n");
+        exit(EXIT_FAILURE);
+    }
 
     // bring up cpu
     DMG_DEBUG_PRINT("Bringing up cpu...%s", "\n");
     struct CPU* cpu = create_cpu(registers, mmu);
+    if (cpu == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create cpu\n");
+        exit(EXIT_FAILURE);
+    }
     
     // Set up SDL with the configured scale factor
     DMG_DEBUG_PRINT("Creating form...%s", "\n");
     struct Form* form = create_form();
+    if (form == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create form\n");
+        exit(EXIT_FAILURE);
+    }
     
     // Main emulation loop here
     DMG_DEBUG_PRINT("Starting emulation loop...%s", "\n");

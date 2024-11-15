@@ -36,7 +36,7 @@ struct Vram *create_vram(void)
     vram->get_vram_word = vram_get_word;
     vram->set_vram_word = vram_set_word;
     // Initialize vram array to 0
-    VRAM_TRACE_PRINT("VRAM_CREATE: Initializing vram array to 0\n");
+    VRAM_TRACE_PRINT("VRAM_CREATE: Initializing vram array to 0%s", "\n");
     memset(vram->vram_byte, 0, VRAM_SIZE);
     // set method pointers
     vram->get_vram_byte = vram_get_byte;
