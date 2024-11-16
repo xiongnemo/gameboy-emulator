@@ -68,7 +68,7 @@ struct PackedInstructionParam instruction_table[256] = {
     {rra, {}},
     // ---------------------------------------------------------------
     // 0x20: JR NZ, r8
-    {jr_cc_imm, {.cc = JumpCondition_NZ}},
+    {jr_cc_imm, {.cc = JumpCondition_NZ}, .cycles_alternative = 3},
     // 0x21: LD HL, d16
     {ld_imm_to_register_pair, {.rp_1 = HL}},
     // 0x22: LD (HL+), A
@@ -84,7 +84,7 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0x27: DAA
     {daa, {}},
     // 0x28: JR Z, r8
-    {jr_cc_imm, {.cc = JumpCondition_Z}},
+    {jr_cc_imm, {.cc = JumpCondition_Z}, .cycles_alternative = 3},
     // 0x29: ADD HL, HL
     {add_hl_to_register_pair, {.rp_1 = HL}},
     // 0x2A: LD A, (HL+)
@@ -101,7 +101,7 @@ struct PackedInstructionParam instruction_table[256] = {
     {cpl, {}},
     // ---------------------------------------------------------------
     // 0x30: JR NC, r8
-    {jr_cc_imm, {.cc = JumpCondition_NC}},
+    {jr_cc_imm, {.cc = JumpCondition_NC}, .cycles_alternative = 3},
     // 0x31: LD SP, d16
     {ld_imm_to_sp, {}},
     // 0x32: LD (HL-), A
@@ -117,7 +117,7 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0x37: SCF
     {scf, {}},
     // 0x38: JR C, r8
-    {jr_cc_imm, {.cc = JumpCondition_C}},
+    {jr_cc_imm, {.cc = JumpCondition_C}, .cycles_alternative = 3},
     // 0x39: ADD HL, SP
     {add_sp_to_hl, {}},
     // 0x3A: LD A, (HL-)
@@ -398,15 +398,15 @@ struct PackedInstructionParam instruction_table[256] = {
     {cp_register_to_a, {.reg_1 = A}},
     // ---------------------------------------------------------------
     // 0xC0: RET NZ
-    {ret_cc, {.cc = JumpCondition_NZ}},
+    {ret_cc, {.cc = JumpCondition_NZ}, .cycles_alternative = 5},
     // 0xC1: POP BC
     {pop_register_pair, {.rp_1 = BC}},
     // 0xC2: JP NZ, a16
-    {jp_cc_imm, {.cc = JumpCondition_NZ}},
+    {jp_cc_imm, {.cc = JumpCondition_NZ}, .cycles_alternative = 4},
     // 0xC3: JP a16
     {jp_imm, {}},
     // 0xC4: CALL NZ, a16
-    {call_cc_imm, {.cc = JumpCondition_NZ}},
+    {call_cc_imm, {.cc = JumpCondition_NZ}, .cycles_alternative = 6},
     // 0xC5: PUSH BC
     {push_register_pair, {.rp_1 = BC}},
     // 0xC6: ADD A, d8
@@ -414,15 +414,15 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0xC7: RST 00H
     {rst_00h, {}},
     // 0xC8: RET Z
-    {ret_cc, {.cc = JumpCondition_Z}},
+    {ret_cc, {.cc = JumpCondition_Z}, .cycles_alternative = 5},
     // 0xC9: RET
     {ret, {}},
     // 0xCA: JP Z, a16
-    {jp_cc_imm, {.cc = JumpCondition_Z}},
+    {jp_cc_imm, {.cc = JumpCondition_Z}, .cycles_alternative = 4},
     // 0xCB: PREFIX CB
     {prefix_cb, {}},
     // 0xCC: CALL Z, a16
-    {call_cc_imm, {.cc = JumpCondition_Z}},
+    {call_cc_imm, {.cc = JumpCondition_Z}, .cycles_alternative = 6},
     // 0xCD: CALL a16
     {call_imm, {}},
     // 0xCE: ADC A, d8
@@ -431,15 +431,15 @@ struct PackedInstructionParam instruction_table[256] = {
     {rst_08h, {}},
     // ---------------------------------------------------------------
     // 0xD0: RET NC
-    {ret_cc, {.cc = JumpCondition_NC}},
+    {ret_cc, {.cc = JumpCondition_NC}, .cycles_alternative = 5},
     // 0xD1: POP DE
     {pop_register_pair, {.rp_1 = DE}},
     // 0xD2: JP NC, a16
-    {jp_cc_imm, {.cc = JumpCondition_NC}},
+    {jp_cc_imm, {.cc = JumpCondition_NC}, .cycles_alternative = 4},
     // 0xD3: NULL
     {cpu_invalid_opcode, {}},
     // 0xD4: CALL NC, a16
-    {call_cc_imm, {.cc = JumpCondition_NC}},
+    {call_cc_imm, {.cc = JumpCondition_NC}, .cycles_alternative = 6},
     // 0xD5: PUSH DE
     {push_register_pair, {.rp_1 = DE}},
     // 0xD6: SUB A, d8
@@ -447,15 +447,15 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0xD7: RST 10H
     {rst_10h, {}},
     // 0xD8: RET C
-    {ret_cc, {.cc = JumpCondition_C}},
+    {ret_cc, {.cc = JumpCondition_C}, .cycles_alternative = 5},
     // 0xD9: RETI
     {reti, {}},
     // 0xDA: JP C, a16
-    {jp_cc_imm, {.cc = JumpCondition_C}},
+    {jp_cc_imm, {.cc = JumpCondition_C}, .cycles_alternative = 4},
     // 0xDB: NULL
     {cpu_invalid_opcode, {}},
     // 0xDC: CALL C, a16
-    {call_cc_imm, {.cc = JumpCondition_C}},
+    {call_cc_imm, {.cc = JumpCondition_C}, .cycles_alternative = 6},
     // 0xDD: NULL
     {cpu_invalid_opcode, {}},
     // 0xDE: SBC A, d8
@@ -1069,8 +1069,12 @@ struct CPU *create_cpu(struct Registers *registers, struct MMU *mmu)
     // set method pointers
     cpu->cpu_step_next = cpu_step_next;
 
+    // set instruction tables
     cpu->instruction_table = instruction_table;
     cpu->instruction_table_cb = instruction_table_cb;
+
+    // set interrupt vector table
+    cpu->interrupt_vector_table = interrupt_vector_table;
 
     return cpu;
 }
@@ -1091,8 +1095,61 @@ void free_cpu(struct CPU *cpu)
 // Private: Handle interrupts
 uint8_t handle_interrupts(struct CPU *cpu)
 {
-    // TODO: Implement interrupt handling
-    return 0;
+    // Check if interrupt master enable is disabled
+    if (!cpu->interrupt_master_enable)
+    {
+        return 0;
+    }
+
+    // hard wire interrupt flag and interrupt enable from mmu
+    uint8_t interrupt_flag = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF0F);
+    uint8_t interrupt_enable = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFFFF);
+
+    // enable interrupt if interrupt flag is set and interrupt enable is set
+    uint8_t interrupt_enabled = interrupt_flag & interrupt_enable;
+
+    if (!interrupt_enabled)
+    {
+        return 0;
+    }
+
+    // interrupt happening now!!
+    // disbale halting
+    cpu->halted = false;
+    // disable further interrupt
+    cpu->interrupt_master_enable = false;
+
+    // handle interrupt by priority
+    // from highest (Bit 0) to lowest (Bit 4)
+    // Bit 0: V-Blank
+    // Bit 1: LCDC STAT
+    // Bit 2: Timer Overflow
+    // Bit 3: Serial I/O Transfer Completion
+    // Bit 4: Joypad (Transition from high to low of pin number P10 - P13)
+    // get trailing bits
+    // method 1 (Intel?)
+    // #ifdef __BMI__
+    // uint8_t interrupt_bit = _tzcnt_u16(interrupt_enabled);
+    // #else
+    // // method 2:
+    uint8_t interrupt_bit = __builtin_ctz(interrupt_enabled);
+    // #endif
+
+    // set that bit to 0 in interrupt flag
+    cpu->mmu->mmu_set_byte(cpu->mmu, INTERRUPT_FLAG_ADDRESS, interrupt_flag & ~(1 << interrupt_bit));
+
+    // calculate interrupt address
+    uint16_t interrupt_address = cpu->interrupt_vector_table[interrupt_bit];
+
+    // push pc to stack
+    uint16_t old_pc = cpu->registers->get_register_pair(cpu->registers, PC);
+    uint16_t old_sp = cpu->registers->get_control_register(cpu->registers, SP);
+    cpu->mmu->mmu_set_word(cpu->mmu, old_sp, old_pc);
+    cpu->registers->set_control_register(cpu->registers, SP, old_sp - 2);
+
+    // jump to interrupt address
+    cpu->registers->set_register_pair(cpu->registers, PC, interrupt_address);
+    return 4;
 }
 
 uint8_t cpu_step_next(struct CPU *cpu)
@@ -1160,7 +1217,7 @@ uint8_t cpu_step_execute_cb_op_code(struct CPU *cpu, uint8_t op_byte)
     CPU_DEBUG_PRINT("Executing CB Op Code: 0xCB%02x\n", op_byte);
     struct PackedInstructionParam *param = &cpu->instruction_table_cb[op_byte];
     param->fn(cpu, &param->param);
-    return cpu->opcode_cycle_prefix_cb[op_byte];
+    return cpu->opcode_cycle_prefix_cb[op_byte] + CB_PREFIX_CYCLES;
 }
 
 // Interrupt Master Enable flag
@@ -1564,6 +1621,7 @@ EXECUTABLE_INSTRUCTION(jp_cc_imm)
     if (jump)
     {
         cpu->registers->set_control_register(cpu->registers, PC, address);
+        param->result_is_alternative = true;
     }
 }
 
@@ -1600,6 +1658,7 @@ EXECUTABLE_INSTRUCTION(jr_cc_imm)
     {
         uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
         cpu->registers->set_control_register(cpu->registers, PC, pc + offset);
+        param->result_is_alternative = true;
     }
 }
 
@@ -1645,6 +1704,7 @@ EXECUTABLE_INSTRUCTION(call_cc_imm)
         cpu->mmu->mmu_set_word(cpu->mmu, sp, pc);
         cpu->registers->set_control_register(cpu->registers, SP, sp);
         cpu->registers->set_control_register(cpu->registers, PC, address);
+        param->result_is_alternative = true;
     }
 }
 
@@ -1683,6 +1743,7 @@ EXECUTABLE_INSTRUCTION(ret_cc)
         uint16_t address = cpu->mmu->mmu_get_word(cpu->mmu, sp);
         cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
         cpu->registers->set_control_register(cpu->registers, PC, address);
+        param->result_is_alternative = true;
     }
 }
 
@@ -2411,5 +2472,9 @@ uint8_t cpu_step_execute_main(struct CPU *cpu, uint8_t op_byte)
     CPU_DEBUG_PRINT("Executing Op Code: 0x%02X\n", op_byte);
     struct PackedInstructionParam *param = &cpu->instruction_table[op_byte];
     param->fn(cpu, &param->param);
+    if (param->param.result_is_alternative)
+    {
+        return param->cycles_alternative;
+    }
     return cpu->opcode_cycle_main[op_byte];
 }

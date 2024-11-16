@@ -3,6 +3,7 @@
 
 #include "mmu.h"
 #include "register.h"
+#include <immintrin.h>
 
 extern struct EmulatorConfig config;
 
@@ -71,28 +72,32 @@ extern struct EmulatorConfig config;
 
 // CB Prefix
 #define CB_PREFIX 0xCB
+#define CB_PREFIX_CYCLES 1
 
-// Name - IF
-// Contents - Interrupt Flag (R/W)
-// Bit 4: Transition from high to low of pin number P10 - P13
-// Bit 3: Serial I/O transfer complete
-// Bit 2: Timer overflow
-// Bit 1: LCDC (see STAT)
-// Bit 0: V-Blank
-// The priority and jump address for the above 5 interrupts:
-// doc/gameboy-cpu-manual.pdf page 39
-#define INTERRUPT_FLAG_ADDRESS 0xFF00     
+#define ZERO_PAGE_ADDRESS 0xFF00
 
-// Name - IE
-// Contents - Interrupt Enable (R/W)
-// Bit 4: Transition from high to low of pin number P10 - P13
-// Bit 3: Serial I/O transfer complete
-// Bit 2: Timer overflow
-// Bit 1: LCDC (see STAT)
-// Bit 0: V-Blank
-// 0 - disable
-// 1 - enable
+// FF0F - IF - Interrupt Flag (R/W)
+// Bit 0: V-Blank  Interrupt Request (INT 40h)  (1=Request)
+// Bit 1: LCD STAT Interrupt Request (INT 48h)  (1=Request)
+// Bit 2: Timer    Interrupt Request (INT 50h)  (1=Request)
+// Bit 3: Serial   Interrupt Request (INT 58h)  (1=Request)
+// Bit 4: Joypad   Interrupt Request (INT 60h)  (1=Request)
+#define INTERRUPT_FLAG_ADDRESS 0xFF00
+
+// FFFF - IE - Interrupt Enable (R/W)
+// Bit 0: V-Blank  Interrupt Enable  (INT 40h)  (1=Enable)
+// Bit 1: LCD STAT Interrupt Enable  (INT 48h)  (1=Enable)
+// Bit 2: Timer    Interrupt Enable  (INT 50h)  (1=Enable)
+// Bit 3: Serial   Interrupt Enable  (INT 58h)  (1=Enable)
+// Bit 4: Joypad   Interrupt Enable  (INT 60h)  (1=Enable)
 #define INTERRUPT_ENABLE_ADDRESS 0xFFFF
+
+// interrupt vector table
+#define INTERRUPT_VECTOR_VBLANK 0x0040
+#define INTERRUPT_VECTOR_LCD_STAT 0x0048
+#define INTERRUPT_VECTOR_TIMER 0x0050
+#define INTERRUPT_VECTOR_SERIAL 0x0058
+#define INTERRUPT_VECTOR_JOYPAD 0x0060
 
 struct CPU;
 struct InstructionParam;
@@ -125,20 +130,24 @@ struct InstructionParam
 
     // bit position
     uint8_t bit_position;
+
+    // If true, cycles_alternative is used
+    bool result_is_alternative;
 };
 
 typedef void (*instruction_fn)(struct CPU *, struct InstructionParam *);
 
 /*
-* eg: PACKED_INSTRUCTION_PARAM(ld_imm_to_register_pair, {.rp_1 = BC})
-* This is used to initialize the instruction param
-* It should expand to ld_imm_to_register_pair, struct InstructionParam{.rp_1 = BC}
-*/
+ * eg: PACKED_INSTRUCTION_PARAM(ld_imm_to_register_pair, {.rp_1 = BC})
+ * This is used to initialize the instruction param
+ * It should expand to ld_imm_to_register_pair, struct InstructionParam{.rp_1 = BC}
+ */
 // #define PACKED_INSTRUCTION_PARAM(fn, param) fn, struct InstructionParam param
 struct PackedInstructionParam
 {
     instruction_fn fn;
     struct InstructionParam param;
+    uint8_t cycles_alternative; // Cycles if condition is true
 };
 
 struct CPU
@@ -150,9 +159,9 @@ struct CPU
     struct MMU *mmu;
 
     // CPU state
-    bool halted;  // CPU is halted
-    bool stopped; // CPU is stopped
-    bool interrupt_master_enable;     // Interrupt Master Enable flag
+    bool halted;                  // CPU is halted
+    bool stopped;                 // CPU is stopped
+    bool interrupt_master_enable; // Interrupt Master Enable flag
 
     // Clock management
     uint32_t cycles; // Current cycle count
@@ -173,24 +182,36 @@ struct CPU
     struct PackedInstructionParam *instruction_table;
     // CB prefix instruction table (function pointers), 256 entries
     struct PackedInstructionParam *instruction_table_cb;
+
+    // interrupt vector table
+    uint16_t *interrupt_vector_table    ;
 };
+
+static const uint16_t interrupt_vector_table[5] = {
+    INTERRUPT_VECTOR_VBLANK,
+    INTERRUPT_VECTOR_LCD_STAT,
+    INTERRUPT_VECTOR_TIMER,
+    INTERRUPT_VECTOR_SERIAL,
+    INTERRUPT_VECTOR_JOYPAD,
+};
+
 
 // initialize opcode cycle count
 //  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 static const uint8_t opcode_cycle_main[256] = {
     1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
-    0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
+    1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
     2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 2
     2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 3
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 4
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 5
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 6
-    2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
+    2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 8
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 9
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // a
     1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // b
-    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4, // c
+    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 1, 3, 6, 2, 4, // c
     2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4, // d
     3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4, // e
     3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4, // f
@@ -203,10 +224,10 @@ static const uint8_t opcode_cycle_prefix_cb[256] = {
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 1
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 2
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 3
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 4
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 5
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 6
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2, // 7
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 4
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 5
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 6
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 7
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 8
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 9
     2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // a
