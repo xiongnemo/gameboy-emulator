@@ -3,6 +3,7 @@ test/nemo*
 *.gb
 *.log
 .vscode/
+*.cc
 
 # Prerequisites
 *.d

@@ -72,6 +72,28 @@ extern struct EmulatorConfig config;
 // CB Prefix
 #define CB_PREFIX 0xCB
 
+// Name - IF
+// Contents - Interrupt Flag (R/W)
+// Bit 4: Transition from high to low of pin number P10 - P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer overflow
+// Bit 1: LCDC (see STAT)
+// Bit 0: V-Blank
+// The priority and jump address for the above 5 interrupts:
+// doc/gameboy-cpu-manual.pdf page 39
+#define INTERRUPT_FLAG_ADDRESS 0xFF00     
+
+// Name - IE
+// Contents - Interrupt Enable (R/W)
+// Bit 4: Transition from high to low of pin number P10 - P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer overflow
+// Bit 1: LCDC (see STAT)
+// Bit 0: V-Blank
+// 0 - disable
+// 1 - enable
+#define INTERRUPT_ENABLE_ADDRESS 0xFFFF
+
 struct CPU;
 struct InstructionParam;
 
@@ -101,8 +123,8 @@ struct InstructionParam
     // JumpCondition
     uint8_t cc;
 
-    // Value
-    uint8_t value;
+    // bit position
+    uint8_t bit_position;
 };
 
 typedef void (*instruction_fn)(struct CPU *, struct InstructionParam *);
@@ -130,7 +152,7 @@ struct CPU
     // CPU state
     bool halted;  // CPU is halted
     bool stopped; // CPU is stopped
-    bool ime;     // Interrupt Master Enable flag
+    bool interrupt_master_enable;     // Interrupt Master Enable flag
 
     // Clock management
     uint32_t cycles; // Current cycle count
@@ -149,6 +171,8 @@ struct CPU
 
     // instruction table (function pointers), 256 entries
     struct PackedInstructionParam *instruction_table;
+    // CB prefix instruction table (function pointers), 256 entries
+    struct PackedInstructionParam *instruction_table_cb;
 };
 
 // initialize opcode cycle count
@@ -227,6 +251,12 @@ uint8_t cpu_step_read_byte(struct CPU *cpu);
 // Read word from MMU
 uint16_t cpu_step_read_word(struct CPU *cpu);
 
+// Interrupt Master Enable flag
+bool cpu_get_interrupt_master_enable(struct CPU *cpu);
+
+// Set Interrupt Master Enable flag
+void cpu_set_interrupt_master_enable(struct CPU *cpu, bool enable);
+
 // instruction methods
 
 #define EXECUTABLE_INSTRUCTION(fn_name) void fn_name(struct CPU *cpu, struct InstructionParam *param)
@@ -288,6 +318,9 @@ EXECUTABLE_INSTRUCTION(ld_zero_page_address_imm_to_a);
 
 // load value from register A to address with immediate value
 EXECUTABLE_INSTRUCTION(ld_a_to_address_imm);
+
+// load value from address with immediate value to register A
+EXECUTABLE_INSTRUCTION(ld_address_imm_to_a);
 
 // 16-bit load instructions
 
@@ -552,7 +585,7 @@ EXECUTABLE_INSTRUCTION(dec_sp);
 // N: Reset
 // H: Reset
 // C: Reset
-void swap(struct CPU *cpu, uint8_t *value);
+uint8_t swap(struct CPU *cpu, uint8_t value);
 
 // swap lower and upper nibbles of a register
 EXECUTABLE_INSTRUCTION(swap_register);
@@ -665,7 +698,7 @@ EXECUTABLE_INSTRUCTION(rra);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-void rlc(struct CPU *cpu, uint8_t *value);
+uint8_t rlc(struct CPU *cpu, uint8_t value);
 
 // RLC r
 EXECUTABLE_INSTRUCTION(rlc_register);
@@ -680,7 +713,7 @@ EXECUTABLE_INSTRUCTION(rlc_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-void rl(struct CPU *cpu, uint8_t *value);
+uint8_t rl(struct CPU *cpu, uint8_t value);
 
 // RL r
 EXECUTABLE_INSTRUCTION(rl_register);
@@ -695,7 +728,7 @@ EXECUTABLE_INSTRUCTION(rl_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-void rrc(struct CPU *cpu, uint8_t *value);
+uint8_t rrc(struct CPU *cpu, uint8_t value);
 
 // RRC r
 EXECUTABLE_INSTRUCTION(rrc_register);
@@ -710,7 +743,7 @@ EXECUTABLE_INSTRUCTION(rrc_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-void rr(struct CPU *cpu, uint8_t *value);
+uint8_t rr(struct CPU *cpu, uint8_t value);
 
 // RR r
 EXECUTABLE_INSTRUCTION(rr_register);
@@ -725,7 +758,7 @@ EXECUTABLE_INSTRUCTION(rr_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before shift)
-void sla(struct CPU *cpu, uint8_t *value);
+uint8_t sla(struct CPU *cpu, uint8_t value);
 
 // SLA r
 EXECUTABLE_INSTRUCTION(sla_register);
@@ -740,7 +773,7 @@ EXECUTABLE_INSTRUCTION(sla_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before shift)
-void sra(struct CPU *cpu, uint8_t *value);
+uint8_t sra(struct CPU *cpu, uint8_t value);
 
 // SRA r
 EXECUTABLE_INSTRUCTION(sra_register);
@@ -755,7 +788,7 @@ EXECUTABLE_INSTRUCTION(sra_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before shift)
-void srl(struct CPU *cpu, uint8_t *value);
+uint8_t srl(struct CPU *cpu, uint8_t value);
 
 // SRL r
 EXECUTABLE_INSTRUCTION(srl_register);
@@ -772,7 +805,7 @@ EXECUTABLE_INSTRUCTION(srl_address_hl);
 // N: Reset
 // H: Set
 // C: Not affected
-void bit(struct CPU *cpu, uint8_t bit, uint8_t *value);
+uint8_t bit(struct CPU *cpu, uint8_t bit, uint8_t value);
 
 // BIT b, r
 EXECUTABLE_INSTRUCTION(bit_register);
@@ -784,7 +817,7 @@ EXECUTABLE_INSTRUCTION(bit_address_hl);
 // set bit b of n
 // Flags:
 // None
-void set(struct CPU *cpu, uint8_t bit, uint8_t *value);
+uint8_t set(struct CPU *cpu, uint8_t bit, uint8_t value);
 
 // SET b, r
 EXECUTABLE_INSTRUCTION(set_register);
@@ -796,7 +829,7 @@ EXECUTABLE_INSTRUCTION(set_address_hl);
 // reset bit b of n
 // Flags:
 // None
-void res(struct CPU *cpu, uint8_t bit, uint8_t *value);
+uint8_t res(struct CPU *cpu, uint8_t bit, uint8_t value);
 
 // RES b, r
 EXECUTABLE_INSTRUCTION(res_register);

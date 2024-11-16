@@ -2,21 +2,21 @@
 
 uint8_t ram_get_byte(struct Ram *self, uint16_t address)
 {
-    RAM_TRACE_PRINT("RAM_GET_BYTE: address: %d, value: 0x%02x\n", address, self->ram_byte[address]);
+    RAM_TRACE_PRINT("RAM_GET_BYTE: address: 0x%02x, value: 0x%02x\n", address, self->ram_byte[address]);
     return self->ram_byte[address];
 }
 
 void ram_set_byte(struct Ram *self, uint16_t address, uint8_t byte)
 {
     self->ram_byte[address] = byte;
-    RAM_TRACE_PRINT("RAM_SET_BYTE: address: %d, value: 0x%02x\n", address, byte);
+    RAM_TRACE_PRINT("RAM_SET_BYTE: address: 0x%02x, value: 0x%02x\n", address, byte);
 }
 
 uint16_t ram_get_word(struct Ram *self, uint16_t address)
 {
     // Little endian: lower byte first, then higher byte
     uint16_t value = (uint16_t)(self->ram_byte[address] | (self->ram_byte[address + 1] << 8));
-    RAM_TRACE_PRINT("RAM_GET_WORD: address: %d, value: 0x%04x\n", address, value);
+    RAM_TRACE_PRINT("RAM_GET_WORD: address: 0x%02x, value: 0x%04x\n", address, value);
     return value;
 }
 
@@ -25,7 +25,7 @@ void ram_set_word(struct Ram *self, uint16_t address, uint16_t word)
     // Little endian: lower byte first, then higher byte
     self->ram_byte[address] = word & 0xFF;
     self->ram_byte[address + 1] = (word >> 8) & 0xFF;
-    RAM_TRACE_PRINT("RAM_SET_WORD: address: %d, value: 0x%04x\n", address, word);
+    RAM_TRACE_PRINT("RAM_SET_WORD: address: 0x%02x, value: 0x%04x\n", address, word);
 }
 
 struct Ram *create_ram(void)
