@@ -8,40 +8,36 @@
 extern struct EmulatorConfig config;
 
 // CPU debug print
-#define CPU_DEBUG_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(DEBUG_LEVEL);                                 \
-        printf("CPU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define CPU_DEBUG_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(DEBUG_LEVEL);                                   \
+        printf("CPU: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define CPU_INFO_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) \
-    {                                                            \
-        PRINT_TIME_IN_SECONDS();                                 \
-        PRINT_LEVEL(INFO_LEVEL);                                 \
-        printf("CPU: ");                                         \
-        printf(fmt, ##__VA_ARGS__);                              \
+#define CPU_INFO_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(INFO_LEVEL);                                   \
+        printf("CPU: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
-#define CPU_TRACE_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(TRACE_LEVEL);                                 \
-        printf("CPU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define CPU_TRACE_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(TRACE_LEVEL);                                   \
+        printf("CPU: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define CPU_WARN_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) \
-    {                                                            \
-        PRINT_TIME_IN_SECONDS();                                 \
-        PRINT_LEVEL(WARN_LEVEL);                                 \
-        printf("CPU: ");                                         \
-        printf(fmt, ##__VA_ARGS__);                              \
+#define CPU_WARN_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(WARN_LEVEL);                                   \
+        printf("CPU: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
 #define CPU_ERROR_PRINT(fmt, ...)   \
@@ -64,14 +60,14 @@ extern struct EmulatorConfig config;
 #define CPU_CLOCK_SPEED 4194304
 
 // Interrupt flags
-#define INT_VBLANK 0x01
+#define INT_VBLANK   0x01
 #define INT_LCD_STAT 0x02
-#define INT_TIMER 0x04
-#define INT_SERIAL 0x08
-#define INT_JOYPAD 0x10
+#define INT_TIMER    0x04
+#define INT_SERIAL   0x08
+#define INT_JOYPAD   0x10
 
 // CB Prefix
-#define CB_PREFIX 0xCB
+#define CB_PREFIX        0xCB
 #define CB_PREFIX_CYCLES 1
 
 #define ZERO_PAGE_ADDRESS 0xFF00
@@ -93,11 +89,11 @@ extern struct EmulatorConfig config;
 #define INTERRUPT_ENABLE_ADDRESS 0xFFFF
 
 // interrupt vector table
-#define INTERRUPT_VECTOR_VBLANK 0x0040
+#define INTERRUPT_VECTOR_VBLANK   0x0040
 #define INTERRUPT_VECTOR_LCD_STAT 0x0048
-#define INTERRUPT_VECTOR_TIMER 0x0050
-#define INTERRUPT_VECTOR_SERIAL 0x0058
-#define INTERRUPT_VECTOR_JOYPAD 0x0060
+#define INTERRUPT_VECTOR_TIMER    0x0050
+#define INTERRUPT_VECTOR_SERIAL   0x0058
+#define INTERRUPT_VECTOR_JOYPAD   0x0060
 
 struct CPU;
 struct InstructionParam;
@@ -105,9 +101,9 @@ struct InstructionParam;
 enum JumpCondition
 {
     JumpCondition_NZ = 0x00,
-    JumpCondition_Z = 0x01,
+    JumpCondition_Z  = 0x01,
     JumpCondition_NC = 0x02,
-    JumpCondition_C = 0x03,
+    JumpCondition_C  = 0x03,
 };
 
 // Instruction parameter
@@ -135,7 +131,7 @@ struct InstructionParam
     bool result_is_alternative;
 };
 
-typedef void (*instruction_fn)(struct CPU *, struct InstructionParam *);
+typedef void (*instruction_fn)(struct CPU*, struct InstructionParam*);
 
 /*
  * eg: PACKED_INSTRUCTION_PARAM(ld_imm_to_register_pair, {.rp_1 = BC})
@@ -145,46 +141,46 @@ typedef void (*instruction_fn)(struct CPU *, struct InstructionParam *);
 // #define PACKED_INSTRUCTION_PARAM(fn, param) fn, struct InstructionParam param
 struct PackedInstructionParam
 {
-    instruction_fn fn;
+    instruction_fn          fn;
     struct InstructionParam param;
-    uint8_t cycles_alternative; // Cycles if condition is true
+    uint8_t                 cycles_alternative;   // Cycles if condition is true
 };
 
 struct CPU
 {
     // Registers
-    struct Registers *registers;
+    struct Registers* registers;
 
     // Memory Management Unit
-    struct MMU *mmu;
+    struct MMU* mmu;
 
     // CPU state
-    bool halted;                  // CPU is halted
-    bool stopped;                 // CPU is stopped
-    bool interrupt_master_enable; // Interrupt Master Enable flag
+    bool halted;                    // CPU is halted
+    bool stopped;                   // CPU is stopped
+    bool interrupt_master_enable;   // Interrupt Master Enable flag
 
     // Clock management
-    uint32_t cycles; // Current cycle count
+    uint32_t cycles;   // Current cycle count
 
     // Op Code
     uint8_t op_code;
 
     //  Cycle count for each opcode
-    const uint8_t *opcode_cycle_main;
+    const uint8_t* opcode_cycle_main;
 
     //  Cycle count for each opcode with prefix CB
-    const uint8_t *opcode_cycle_prefix_cb;
+    const uint8_t* opcode_cycle_prefix_cb;
 
     // Public method pointers
-    uint8_t (*cpu_step_next)(struct CPU *); // Step next instruction (or interrupt)
+    uint8_t (*cpu_step_next)(struct CPU*);   // Step next instruction (or interrupt)
 
     // instruction table (function pointers), 256 entries
-    struct PackedInstructionParam *instruction_table;
+    struct PackedInstructionParam* instruction_table;
     // CB prefix instruction table (function pointers), 256 entries
-    struct PackedInstructionParam *instruction_table_cb;
+    struct PackedInstructionParam* instruction_table_cb;
 
     // interrupt vector table
-    uint16_t *interrupt_vector_table    ;
+    uint16_t* interrupt_vector_table;
 };
 
 static const uint16_t interrupt_vector_table[5] = {
@@ -199,88 +195,89 @@ static const uint16_t interrupt_vector_table[5] = {
 // initialize opcode cycle count
 //  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 static const uint8_t opcode_cycle_main[256] = {
-    1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
-    1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
-    2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 2
-    2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 3
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 4
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 5
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 6
-    2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 8
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 9
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // a
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // b
-    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 1, 3, 6, 2, 4, // c
-    2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4, // d
-    3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4, // e
-    3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4, // f
+    1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,   // 0
+    1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,   // 1
+    2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,   // 2
+    2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,   // 3
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // 4
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // 5
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // 6
+    2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1,   // 7
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // 8
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // 9
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // a
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,   // b
+    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 1, 3, 6, 2, 4,   // c
+    2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,   // d
+    3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,   // e
+    3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4,   // f
 };
 
 // initialize opcode cycle count for prefix CB
 //  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 static const uint8_t opcode_cycle_prefix_cb[256] = {
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 0
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 1
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 2
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 3
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 4
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 5
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 6
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 7
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 8
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 9
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // a
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // b
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // c
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // d
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // e
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // f
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 0
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 1
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 2
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 3
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 4
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 5
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 6
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 7
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 8
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // 9
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // a
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // b
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // c
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // d
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // e
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,   // f
 };
 
 // Define instruction function type
-typedef uint8_t (*cpu_instruction_fn)(struct CPU *cpu, ...);
+typedef uint8_t (*cpu_instruction_fn)(struct CPU* cpu, ...);
 
 // Function declarations
-struct CPU *create_cpu(struct Registers *registers, struct MMU *mmu);
-void free_cpu(struct CPU *cpu);
+struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu);
+void        free_cpu(struct CPU* cpu);
 
 // Step next instruction (or interrupt), called by main loop
-uint8_t cpu_step_next(struct CPU *cpu);
+uint8_t cpu_step_next(struct CPU* cpu);
 
 // Execute one instruction
-uint8_t cpu_step(struct CPU *cpu);
+uint8_t cpu_step(struct CPU* cpu);
 
 // Execute Op Code
-uint8_t cpu_step_execute_op_code(struct CPU *cpu, uint8_t op_byte);
+uint8_t cpu_step_execute_op_code(struct CPU* cpu, uint8_t op_byte);
 
 // Execute CB Prefix
-uint8_t cpu_step_execute_prefix_cb(struct CPU *cpu);
+uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu);
 
 // Execute CB Op Code
-uint8_t cpu_step_execute_cb_op_code(struct CPU *cpu, uint8_t op_byte);
+uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte);
 
 // Execute Main Op Code
-uint8_t cpu_step_execute_main(struct CPU *cpu, uint8_t op_byte);
+uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte);
 
 // Execute instruction
-uint8_t cpu_step_execute_instruction(struct CPU *cpu, uint8_t (*instruction)(struct CPU *));
+uint8_t cpu_step_execute_instruction(struct CPU* cpu, uint8_t (*instruction)(struct CPU*));
 
 // Read byte from MMU
-uint8_t cpu_step_read_byte(struct CPU *cpu);
+uint8_t cpu_step_read_byte(struct CPU* cpu);
 
 // Read word from MMU
-uint16_t cpu_step_read_word(struct CPU *cpu);
+uint16_t cpu_step_read_word(struct CPU* cpu);
 
 // Interrupt Master Enable flag
-bool cpu_get_interrupt_master_enable(struct CPU *cpu);
+bool cpu_get_interrupt_master_enable(struct CPU* cpu);
 
 // Set Interrupt Master Enable flag
-void cpu_set_interrupt_master_enable(struct CPU *cpu, bool enable);
+void cpu_set_interrupt_master_enable(struct CPU* cpu, bool enable);
 
 // instruction methods
 
-#define EXECUTABLE_INSTRUCTION(fn_name) void fn_name(struct CPU *cpu, struct InstructionParam *param)
+#define EXECUTABLE_INSTRUCTION(fn_name) \
+    void fn_name(struct CPU* cpu, struct InstructionParam* param)
 
 // abort when invalid opcode is executed
 EXECUTABLE_INSTRUCTION(cpu_invalid_opcode);
@@ -378,7 +375,7 @@ EXECUTABLE_INSTRUCTION(pop_register_pair);
 // N: Reset
 // H: Set if carry from bit 3 to bit 4
 // C: Set if carry from bit 7 to bit 8
-void add_a(struct CPU *cpu, uint8_t *value);
+void add_a(struct CPU* cpu, uint8_t* value);
 
 // add value from immediate value to register A
 EXECUTABLE_INSTRUCTION(add_imm_to_a);
@@ -396,7 +393,7 @@ EXECUTABLE_INSTRUCTION(add_address_hl_to_a);
 // N: Reset
 // H: Set if carry from bit 3 to bit 4
 // C: Set if carry from bit 7 to bit 8
-void adc_a(struct CPU *cpu, uint8_t *value);
+void adc_a(struct CPU* cpu, uint8_t* value);
 
 // add value from immediate value to register A and carry flag
 EXECUTABLE_INSTRUCTION(adc_imm_to_a);
@@ -414,7 +411,7 @@ EXECUTABLE_INSTRUCTION(adc_address_hl_to_a);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Set if no borrow
-void sub_a(struct CPU *cpu, uint8_t *value);
+void sub_a(struct CPU* cpu, uint8_t* value);
 
 // subtract value from immediate value from register A
 EXECUTABLE_INSTRUCTION(sub_imm_to_a);
@@ -432,7 +429,7 @@ EXECUTABLE_INSTRUCTION(sub_address_hl_to_a);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Set if no borrow
-void sbc_a(struct CPU *cpu, uint8_t *value);
+void sbc_a(struct CPU* cpu, uint8_t* value);
 
 // subtract value from immediate value from register A and carry flag
 EXECUTABLE_INSTRUCTION(sbc_imm_to_a);
@@ -450,7 +447,7 @@ EXECUTABLE_INSTRUCTION(sbc_address_hl_to_a);
 // N: Reset
 // H: Set
 // C: Reset
-void and_a(struct CPU *cpu, uint8_t *value);
+void and_a(struct CPU* cpu, uint8_t* value);
 
 // logically AND immediate value with register A, result in register A
 EXECUTABLE_INSTRUCTION(and_imm_to_a);
@@ -468,7 +465,7 @@ EXECUTABLE_INSTRUCTION(and_address_hl_to_a);
 // N: Reset
 // H: Reset
 // C: Reset
-void or_a(struct CPU *cpu, uint8_t *value);
+void or_a(struct CPU* cpu, uint8_t* value);
 
 // logically OR immediate value with register A, result in register A
 EXECUTABLE_INSTRUCTION(or_imm_to_a);
@@ -486,7 +483,7 @@ EXECUTABLE_INSTRUCTION(or_address_hl_to_a);
 // N: Reset
 // H: Reset
 // C: Reset
-void xor_a(struct CPU *cpu, uint8_t *value);
+void xor_a(struct CPU* cpu, uint8_t* value);
 
 // logically XOR immediate value with register A, result in register A
 EXECUTABLE_INSTRUCTION(xor_imm_to_a);
@@ -504,7 +501,7 @@ EXECUTABLE_INSTRUCTION(xor_address_hl_to_a);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Set if A < n
-void cp_a(struct CPU *cpu, uint8_t *value);
+void cp_a(struct CPU* cpu, uint8_t* value);
 
 // compare immediate value with register A
 EXECUTABLE_INSTRUCTION(cp_imm_to_a);
@@ -522,7 +519,7 @@ EXECUTABLE_INSTRUCTION(cp_address_hl_to_a);
 // N: Reset
 // H: Set if carry from bit 3 to bit 4
 // C: Not affected
-void inc(struct CPU *cpu, uint8_t *value);
+void inc(struct CPU* cpu, uint8_t* value);
 
 // INC r
 EXECUTABLE_INSTRUCTION(inc_register);
@@ -537,7 +534,7 @@ EXECUTABLE_INSTRUCTION(inc_address_hl);
 // N: Set
 // H: Set if no borrow from bit 4
 // C: Not affected
-void dec(struct CPU *cpu, uint8_t *value);
+void dec(struct CPU* cpu, uint8_t* value);
 
 // DEC r
 EXECUTABLE_INSTRUCTION(dec_register);
@@ -554,7 +551,7 @@ EXECUTABLE_INSTRUCTION(dec_address_hl);
 // N: Reset
 // H: Set if carry from bit 11 to bit 12
 // C: Set if carry from bit 15 to bit 16
-void add_hl(struct CPU *cpu, uint16_t *value);
+void add_hl(struct CPU* cpu, uint16_t* value);
 
 // ADD HL, rr
 // add register pair to HL
@@ -577,7 +574,7 @@ EXECUTABLE_INSTRUCTION(add_imm_to_sp);
 // increment register
 // Flags:
 // None
-void inc_16_bit(struct CPU *cpu, uint16_t *value);
+void inc_16_bit(struct CPU* cpu, uint16_t* value);
 
 // increment register pair
 EXECUTABLE_INSTRUCTION(inc_register_pair);
@@ -589,7 +586,7 @@ EXECUTABLE_INSTRUCTION(inc_sp);
 // decrement register
 // Flags:
 // None
-void dec_16_bit(struct CPU *cpu, uint16_t *value);
+void dec_16_bit(struct CPU* cpu, uint16_t* value);
 
 // decrement register pair
 EXECUTABLE_INSTRUCTION(dec_register_pair);
@@ -606,7 +603,7 @@ EXECUTABLE_INSTRUCTION(dec_sp);
 // N: Reset
 // H: Reset
 // C: Reset
-uint8_t swap(struct CPU *cpu, uint8_t value);
+uint8_t swap(struct CPU* cpu, uint8_t value);
 
 // swap lower and upper nibbles of a register
 EXECUTABLE_INSTRUCTION(swap_register);
@@ -719,7 +716,7 @@ EXECUTABLE_INSTRUCTION(rra);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-uint8_t rlc(struct CPU *cpu, uint8_t value);
+uint8_t rlc(struct CPU* cpu, uint8_t value);
 
 // RLC r
 EXECUTABLE_INSTRUCTION(rlc_register);
@@ -734,7 +731,7 @@ EXECUTABLE_INSTRUCTION(rlc_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before rotation)
-uint8_t rl(struct CPU *cpu, uint8_t value);
+uint8_t rl(struct CPU* cpu, uint8_t value);
 
 // RL r
 EXECUTABLE_INSTRUCTION(rl_register);
@@ -749,7 +746,7 @@ EXECUTABLE_INSTRUCTION(rl_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-uint8_t rrc(struct CPU *cpu, uint8_t value);
+uint8_t rrc(struct CPU* cpu, uint8_t value);
 
 // RRC r
 EXECUTABLE_INSTRUCTION(rrc_register);
@@ -764,7 +761,7 @@ EXECUTABLE_INSTRUCTION(rrc_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before rotation)
-uint8_t rr(struct CPU *cpu, uint8_t value);
+uint8_t rr(struct CPU* cpu, uint8_t value);
 
 // RR r
 EXECUTABLE_INSTRUCTION(rr_register);
@@ -779,7 +776,7 @@ EXECUTABLE_INSTRUCTION(rr_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 7 data (before shift)
-uint8_t sla(struct CPU *cpu, uint8_t value);
+uint8_t sla(struct CPU* cpu, uint8_t value);
 
 // SLA r
 EXECUTABLE_INSTRUCTION(sla_register);
@@ -794,7 +791,7 @@ EXECUTABLE_INSTRUCTION(sla_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before shift)
-uint8_t sra(struct CPU *cpu, uint8_t value);
+uint8_t sra(struct CPU* cpu, uint8_t value);
 
 // SRA r
 EXECUTABLE_INSTRUCTION(sra_register);
@@ -809,7 +806,7 @@ EXECUTABLE_INSTRUCTION(sra_address_hl);
 // N: Reset
 // H: Reset
 // C: Contains old bit 0 data (before shift)
-uint8_t srl(struct CPU *cpu, uint8_t value);
+uint8_t srl(struct CPU* cpu, uint8_t value);
 
 // SRL r
 EXECUTABLE_INSTRUCTION(srl_register);
@@ -826,7 +823,7 @@ EXECUTABLE_INSTRUCTION(srl_address_hl);
 // N: Reset
 // H: Set
 // C: Not affected
-uint8_t bit(struct CPU *cpu, uint8_t bit, uint8_t value);
+uint8_t bit(struct CPU* cpu, uint8_t bit, uint8_t value);
 
 // BIT b, r
 EXECUTABLE_INSTRUCTION(bit_register);
@@ -838,7 +835,7 @@ EXECUTABLE_INSTRUCTION(bit_address_hl);
 // set bit b of n
 // Flags:
 // None
-uint8_t set(struct CPU *cpu, uint8_t bit, uint8_t value);
+uint8_t set(struct CPU* cpu, uint8_t bit, uint8_t value);
 
 // SET b, r
 EXECUTABLE_INSTRUCTION(set_register);
@@ -850,7 +847,7 @@ EXECUTABLE_INSTRUCTION(set_address_hl);
 // reset bit b of n
 // Flags:
 // None
-uint8_t res(struct CPU *cpu, uint8_t bit, uint8_t value);
+uint8_t res(struct CPU* cpu, uint8_t bit, uint8_t value);
 
 // RES b, r
 EXECUTABLE_INSTRUCTION(res_register);
@@ -908,7 +905,7 @@ EXECUTABLE_INSTRUCTION(call_cc_imm);
 // jump to address n
 // they are hard-coded in the instruction set
 // 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38
-void rst(struct CPU *cpu, uint8_t n);
+void rst(struct CPU* cpu, uint8_t n);
 
 // 0x00
 EXECUTABLE_INSTRUCTION(rst_00h);

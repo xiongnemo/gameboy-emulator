@@ -1,11 +1,13 @@
 #include "dmg.h"
 
-void print_usage(const char* program_name) {
+void print_usage(const char* program_name)
+{
     printf("Usage: %s [options] <rom_file>\n", program_name);
     printf("Options:\n");
     printf("  -h, --help            Display this help message\n");
     printf("  -d                    Enable debug output\n");
-    printf("  -v                    Verbose output (WARN, -v INFO, -vv DEBUG, -vvv TRACE, default: 0)\n");
+    printf("  -v                    Verbose output (WARN, -v INFO, -vv DEBUG, -vvv TRACE, default: "
+           "0)\n");
     printf("  -b, --bootrom <file>  Specify custom boot ROM\n");
     printf("  -s, --scale <n>       Window scale factor (1-4, default: 2)\n");
     printf("Examples:\n");
@@ -14,26 +16,23 @@ void print_usage(const char* program_name) {
     printf("  %s --scale 3 pokemon.gb\n", program_name);
 }
 
-struct EmulatorConfig config = {
-    .rom_path = NULL,
-    .bootrom_path = NULL,
-    .debug_mode = false,
-    .scale_factor = 2,
-    .start_time = 0.0,
-    .disable_color = false,
-    .verbose_level = 0
-};
+struct EmulatorConfig config = {.rom_path      = NULL,
+                                .bootrom_path  = NULL,
+                                .debug_mode    = false,
+                                .scale_factor  = 2,
+                                .start_time    = 0.0,
+                                .disable_color = false,
+                                .verbose_level = 0};
 
-struct EmulatorConfig parse_args(int argc, char* argv[]) {
-    struct EmulatorConfig config = {
-        .rom_path = NULL,
-        .bootrom_path = NULL,
-        .debug_mode = false,
-        .scale_factor = 2,
-        .start_time = 0.0,
-        .disable_color = false,
-        .verbose_level = 0
-    };
+struct EmulatorConfig parse_args(int argc, char* argv[])
+{
+    struct EmulatorConfig config = {.rom_path      = NULL,
+                                    .bootrom_path  = NULL,
+                                    .debug_mode    = false,
+                                    .scale_factor  = 2,
+                                    .start_time    = 0.0,
+                                    .disable_color = false,
+                                    .verbose_level = 0};
 
     if (argc < 2) {
         print_usage(argv[0]);
@@ -44,35 +43,43 @@ struct EmulatorConfig parse_args(int argc, char* argv[]) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             exit(EXIT_SUCCESS);
-        } else if (strcmp(argv[i], "-d") == 0) {
+        }
+        else if (strcmp(argv[i], "-d") == 0) {
             config.debug_mode = true;
-        } else if (strncmp(argv[i], "-v", 2) == 0) {
-            config.debug_mode = true;
-            config.verbose_level = strlen(argv[i]) - 1; // -1 to account for first 'v'
+        }
+        else if (strncmp(argv[i], "-v", 2) == 0) {
+            config.debug_mode    = true;
+            config.verbose_level = strlen(argv[i]) - 1;   // -1 to account for first 'v'
             if (config.verbose_level > 3) {
                 config.verbose_level = 3;
             }
-        } else if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--bootrom") == 0) {
+        }
+        else if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--bootrom") == 0) {
             if (i + 1 < argc) {
                 config.bootrom_path = argv[++i];
-            } else {
+            }
+            else {
                 fprintf(stderr, "Error: Boot ROM path missing\n");
                 exit(EXIT_FAILURE);
             }
-        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--scale") == 0) {
+        }
+        else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--scale") == 0) {
             if (i + 1 < argc) {
                 config.scale_factor = atoi(argv[++i]);
                 if (config.scale_factor < 1 || config.scale_factor > 4) {
                     fprintf(stderr, "Error: Scale factor must be between 1 and 4\n");
                     exit(EXIT_FAILURE);
                 }
-            } else {
+            }
+            else {
                 fprintf(stderr, "Error: Scale factor missing\n");
                 exit(EXIT_FAILURE);
             }
-        } else if (config.rom_path == NULL) {
+        }
+        else if (config.rom_path == NULL) {
             config.rom_path = argv[i];
-        } else {
+        }
+        else {
             fprintf(stderr, "Error: Unexpected argument '%s'\n", argv[i]);
             print_usage(argv[0]);
             exit(EXIT_FAILURE);
@@ -90,9 +97,10 @@ struct EmulatorConfig parse_args(int argc, char* argv[]) {
     return config;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     config = parse_args(argc, argv);
-    
+
     // Initialize emulator components
     DMG_WARN_PRINT("Verbose level %d enabled\n", config.verbose_level);
     DMG_INFO_PRINT("ROM: %s\n", config.rom_path);
@@ -113,7 +121,7 @@ int main(int argc, char* argv[]) {
         DMG_EMERGENCY_PRINT("Failed to load cartridge\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // bring up ram
     DMG_DEBUG_PRINT("Bringing up ram...%s", "\n");
     struct Ram* ram = create_ram();
@@ -129,7 +137,7 @@ int main(int argc, char* argv[]) {
         DMG_EMERGENCY_PRINT("Failed to create vram\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // bring up ppu
     DMG_DEBUG_PRINT("Bringing up ppu...%s", "\n");
     struct PPU* ppu = create_ppu(vram);
@@ -137,7 +145,7 @@ int main(int argc, char* argv[]) {
         DMG_EMERGENCY_PRINT("Failed to create ppu\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // bring up mmu
     DMG_DEBUG_PRINT("Bringing up mmu...%s", "\n");
     struct MMU* mmu = create_mmu(cartridge, ram, ppu);
@@ -161,7 +169,7 @@ int main(int argc, char* argv[]) {
         DMG_EMERGENCY_PRINT("Failed to create cpu\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // Set up SDL with the configured scale factor
     DMG_DEBUG_PRINT("Creating form...%s", "\n");
     struct Form* form = create_form();
@@ -169,7 +177,7 @@ int main(int argc, char* argv[]) {
         DMG_EMERGENCY_PRINT("Failed to create form\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // Main emulation loop here
     DMG_DEBUG_PRINT("Starting emulation loop...%s", "\n");
 
@@ -177,6 +185,6 @@ int main(int argc, char* argv[]) {
     DMG_DEBUG_PRINT("Cleaning up...%s", "\n");
     free_cpu(cpu);
     free_form(form);
-    
+
     return 0;
 }

@@ -7,56 +7,52 @@
 extern struct EmulatorConfig config;
 
 // Register debug print
-#define REGISTER_DEBUG_PRINT(fmt, ...)                            \
-    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(DEBUG_LEVEL);                                 \
-        printf("REG: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define REGISTER_DEBUG_PRINT(fmt, ...)                              \
+    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(DEBUG_LEVEL);                                   \
+        printf("REG: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define REGISTER_INFO_PRINT(fmt, ...)                            \
-    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) \
-    {                                                            \
-        PRINT_TIME_IN_SECONDS();                                 \
-        PRINT_LEVEL(INFO_LEVEL);                                 \
-        printf("REG: ");                                         \
-        printf(fmt, ##__VA_ARGS__);                              \
+#define REGISTER_INFO_PRINT(fmt, ...)                              \
+    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(INFO_LEVEL);                                   \
+        printf("REG: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
-#define REGISTER_TRACE_PRINT(fmt, ...)                            \
-    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(TRACE_LEVEL);                                 \
-        printf("REG: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define REGISTER_TRACE_PRINT(fmt, ...)                              \
+    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(TRACE_LEVEL);                                   \
+        printf("REG: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define REGISTER_WARN_PRINT(fmt, ...)                            \
-    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) \
-    {                                                            \
-        PRINT_TIME_IN_SECONDS();                                 \
-        PRINT_LEVEL(WARN_LEVEL);                                 \
-        printf("REG: ");                                         \
-        printf(fmt, ##__VA_ARGS__);                              \
+#define REGISTER_WARN_PRINT(fmt, ...)                              \
+    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(WARN_LEVEL);                                   \
+        printf("REG: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
 #define REGISTER_ERROR_PRINT(fmt, ...) \
-    {                               \
-        PRINT_TIME_IN_SECONDS();    \
-        PRINT_LEVEL(ERROR_LEVEL);   \
-        printf("REG: ");            \
-        printf(fmt, ##__VA_ARGS__); \
+    {                                  \
+        PRINT_TIME_IN_SECONDS();       \
+        PRINT_LEVEL(ERROR_LEVEL);      \
+        printf("REG: ");               \
+        printf(fmt, ##__VA_ARGS__);    \
     }
 
 #define REGISTER_EMERGENCY_PRINT(fmt, ...) \
-    {                                   \
-        PRINT_TIME_IN_SECONDS();        \
-        PRINT_LEVEL(EMERGENCY_LEVEL);   \
-        printf("REG: ");                \
-        printf(fmt, ##__VA_ARGS__);     \
+    {                                      \
+        PRINT_TIME_IN_SECONDS();           \
+        PRINT_LEVEL(EMERGENCY_LEVEL);      \
+        printf("REG: ");                   \
+        printf(fmt, ##__VA_ARGS__);        \
     }
 
 // Registers
@@ -119,55 +115,55 @@ struct Registers
     uint16_t reg_control[2];
 
     // pointer for quick access
-    uint8_t *a;
-    uint8_t *f;
-    uint8_t *b;
-    uint8_t *c;
-    uint8_t *d;
-    uint8_t *e;
-    uint8_t *h;
-    uint8_t *l;
-    uint16_t *sp;
-    uint16_t *pc;
+    uint8_t*  a;
+    uint8_t*  f;
+    uint8_t*  b;
+    uint8_t*  c;
+    uint8_t*  d;
+    uint8_t*  e;
+    uint8_t*  h;
+    uint8_t*  l;
+    uint16_t* sp;
+    uint16_t* pc;
 
     // Method pointers
-    uint8_t (*get_register_byte)(struct Registers *, enum Register);
-    uint16_t (*get_register_pair)(struct Registers *, enum RegisterPair);
-    void (*set_register_byte)(struct Registers *, enum Register, uint8_t);
-    void (*set_register_pair)(struct Registers *, enum RegisterPair, uint16_t);
-    uint16_t (*get_control_register)(struct Registers *, enum ControlRegister);
-    void (*set_control_register)(struct Registers *, enum ControlRegister, uint16_t);
-    uint8_t (*get_flag)(struct Registers *, enum Flag);
-    bool (*get_flag_z)(struct Registers *);
-    bool (*get_flag_n)(struct Registers *);
-    bool (*get_flag_h)(struct Registers *);
-    bool (*get_flag_c)(struct Registers *);
-    void (*set_flag)(struct Registers *, enum Flag, bool);
-    void (*set_flag_z)(struct Registers *, bool);
-    void (*set_flag_n)(struct Registers *, bool);
-    void (*set_flag_h)(struct Registers *, bool);
-    void (*set_flag_c)(struct Registers *, bool);
+    uint8_t (*get_register_byte)(struct Registers*, enum Register);
+    uint16_t (*get_register_pair)(struct Registers*, enum RegisterPair);
+    void (*set_register_byte)(struct Registers*, enum Register, uint8_t);
+    void (*set_register_pair)(struct Registers*, enum RegisterPair, uint16_t);
+    uint16_t (*get_control_register)(struct Registers*, enum ControlRegister);
+    void (*set_control_register)(struct Registers*, enum ControlRegister, uint16_t);
+    uint8_t (*get_flag)(struct Registers*, enum Flag);
+    bool (*get_flag_z)(struct Registers*);
+    bool (*get_flag_n)(struct Registers*);
+    bool (*get_flag_h)(struct Registers*);
+    bool (*get_flag_c)(struct Registers*);
+    void (*set_flag)(struct Registers*, enum Flag, bool);
+    void (*set_flag_z)(struct Registers*, bool);
+    void (*set_flag_n)(struct Registers*, bool);
+    void (*set_flag_h)(struct Registers*, bool);
+    void (*set_flag_c)(struct Registers*, bool);
 };
 
 // Register methods
-struct Registers *create_registers();
-void free_registers(struct Registers *registers);
-uint8_t get_register_byte(struct Registers *registers, enum Register reg);
-uint16_t get_register_pair(struct Registers *registers, enum RegisterPair reg);
-void set_register_byte(struct Registers *registers, enum Register reg, uint8_t value);
-void set_register_pair(struct Registers *registers, enum RegisterPair reg, uint16_t value);
-uint16_t get_control_register(struct Registers *registers, enum ControlRegister reg);
-void set_control_register(struct Registers *registers, enum ControlRegister reg, uint16_t value);
+struct Registers* create_registers();
+void              free_registers(struct Registers* registers);
+uint8_t           get_register_byte(struct Registers* registers, enum Register reg);
+uint16_t          get_register_pair(struct Registers* registers, enum RegisterPair reg);
+void              set_register_byte(struct Registers* registers, enum Register reg, uint8_t value);
+void     set_register_pair(struct Registers* registers, enum RegisterPair reg, uint16_t value);
+uint16_t get_control_register(struct Registers* registers, enum ControlRegister reg);
+void set_control_register(struct Registers* registers, enum ControlRegister reg, uint16_t value);
 // flags methods
-uint8_t get_flag(struct Registers *registers, enum Flag flag);
-bool get_flag_z(struct Registers *registers);
-bool get_flag_n(struct Registers *registers);
-bool get_flag_h(struct Registers *registers);
-bool get_flag_c(struct Registers *registers);
-void set_flag(struct Registers *registers, enum Flag flag, bool value);
-void set_flag_z(struct Registers *registers, bool value);
-void set_flag_n(struct Registers *registers, bool value);
-void set_flag_h(struct Registers *registers, bool value);
-void set_flag_c(struct Registers *registers, bool value);
+uint8_t get_flag(struct Registers* registers, enum Flag flag);
+bool    get_flag_z(struct Registers* registers);
+bool    get_flag_n(struct Registers* registers);
+bool    get_flag_h(struct Registers* registers);
+bool    get_flag_c(struct Registers* registers);
+void    set_flag(struct Registers* registers, enum Flag flag, bool value);
+void    set_flag_z(struct Registers* registers, bool value);
+void    set_flag_n(struct Registers* registers, bool value);
+void    set_flag_h(struct Registers* registers, bool value);
+void    set_flag_c(struct Registers* registers, bool value);
 
 #endif

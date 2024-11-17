@@ -1,5 +1,6 @@
 #include "cpu.h"
 
+// Instruction table
 struct PackedInstructionParam instruction_table[256] = {
     // 0x00: NOP
     {nop, {}},
@@ -532,545 +533,543 @@ struct PackedInstructionParam instruction_table[256] = {
 // CB prefix instruction table
 struct PackedInstructionParam instruction_table_cb[256] = {
     // 0x00: RLC B
-    {rlc_register, {.reg_1 = B}},
+    {rlc_register,    {.reg_1 = B}                   },
     // 0x01: RLC C
-    {rlc_register, {.reg_1 = C}},
+    {rlc_register,    {.reg_1 = C}                   },
     // 0x02: RLC D
-    {rlc_register, {.reg_1 = D}},
+    {rlc_register,    {.reg_1 = D}                   },
     // 0x03: RLC E
-    {rlc_register, {.reg_1 = E}},
+    {rlc_register,    {.reg_1 = E}                   },
     // 0x04: RLC H
-    {rlc_register, {.reg_1 = H}},
+    {rlc_register,    {.reg_1 = H}                   },
     // 0x05: RLC L
-    {rlc_register, {.reg_1 = L}},
+    {rlc_register,    {.reg_1 = L}                   },
     // 0x06: RLC (HL)
-    {rlc_address_hl, {}},
+    {rlc_address_hl,  {}                             },
     // 0x07: RLC A
-    {rlc_register, {.reg_1 = A}},
+    {rlc_register,    {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x08: RRC B
-    {rrc_register, {.reg_1 = B}},
+    {rrc_register,    {.reg_1 = B}                   },
     // 0x09: RRC C
-    {rrc_register, {.reg_1 = C}},
+    {rrc_register,    {.reg_1 = C}                   },
     // 0x0A: RRC D
-    {rrc_register, {.reg_1 = D}},
+    {rrc_register,    {.reg_1 = D}                   },
     // 0x0B: RRC E
-    {rrc_register, {.reg_1 = E}},
+    {rrc_register,    {.reg_1 = E}                   },
     // 0x0C: RRC H
-    {rrc_register, {.reg_1 = H}},
+    {rrc_register,    {.reg_1 = H}                   },
     // 0x0D: RRC L
-    {rrc_register, {.reg_1 = L}},
+    {rrc_register,    {.reg_1 = L}                   },
     // 0x0E: RRC (HL)
-    {rrc_address_hl, {}},
+    {rrc_address_hl,  {}                             },
     // 0x0F: RRC A
-    {rrc_register, {.reg_1 = A}},
+    {rrc_register,    {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x10: RL B
-    {rl_register, {.reg_1 = B}},
+    {rl_register,     {.reg_1 = B}                   },
     // 0x11: RL C
-    {rl_register, {.reg_1 = C}},
+    {rl_register,     {.reg_1 = C}                   },
     // 0x12: RL D
-    {rl_register, {.reg_1 = D}},
+    {rl_register,     {.reg_1 = D}                   },
     // 0x13: RL E
-    {rl_register, {.reg_1 = E}},
+    {rl_register,     {.reg_1 = E}                   },
     // 0x14: RL H
-    {rl_register, {.reg_1 = H}},
+    {rl_register,     {.reg_1 = H}                   },
     // 0x15: RL L
-    {rl_register, {.reg_1 = L}},
+    {rl_register,     {.reg_1 = L}                   },
     // 0x16: RL (HL)
-    {rl_address_hl, {}},
+    {rl_address_hl,   {}                             },
     // 0x17: RL A
-    {rl_register, {.reg_1 = A}},
+    {rl_register,     {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x18: RR B
-    {rr_register, {.reg_1 = B}},
+    {rr_register,     {.reg_1 = B}                   },
     // 0x19: RR C
-    {rr_register, {.reg_1 = C}},
+    {rr_register,     {.reg_1 = C}                   },
     // 0x1A: RR D
-    {rr_register, {.reg_1 = D}},
+    {rr_register,     {.reg_1 = D}                   },
     // 0x1B: RR E
-    {rr_register, {.reg_1 = E}},
+    {rr_register,     {.reg_1 = E}                   },
     // 0x1C: RR H
-    {rr_register, {.reg_1 = H}},
+    {rr_register,     {.reg_1 = H}                   },
     // 0x1D: RR L
-    {rr_register, {.reg_1 = L}},
+    {rr_register,     {.reg_1 = L}                   },
     // 0x1E: RR (HL)
-    {rr_address_hl, {}},
+    {rr_address_hl,   {}                             },
     // 0x1F: RR A
-    {rr_register, {.reg_1 = A}},
+    {rr_register,     {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x20: SLA B
-    {sla_register, {.reg_1 = B}},
+    {sla_register,    {.reg_1 = B}                   },
     // 0x21: SLA C
-    {sla_register, {.reg_1 = C}},
+    {sla_register,    {.reg_1 = C}                   },
     // 0x22: SLA D
-    {sla_register, {.reg_1 = D}},
+    {sla_register,    {.reg_1 = D}                   },
     // 0x23: SLA E
-    {sla_register, {.reg_1 = E}},
+    {sla_register,    {.reg_1 = E}                   },
     // 0x24: SLA H
-    {sla_register, {.reg_1 = H}},
+    {sla_register,    {.reg_1 = H}                   },
     // 0x25: SLA L
-    {sla_register, {.reg_1 = L}},
+    {sla_register,    {.reg_1 = L}                   },
     // 0x26: SLA (HL)
-    {sla_address_hl, {}},
+    {sla_address_hl,  {}                             },
     // 0x27: SLA A
-    {sla_register, {.reg_1 = A}},
+    {sla_register,    {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x28: SRA B
-    {sra_register, {.reg_1 = B}},
+    {sra_register,    {.reg_1 = B}                   },
     // 0x29: SRA C
-    {sra_register, {.reg_1 = C}},
+    {sra_register,    {.reg_1 = C}                   },
     // 0x2A: SRA D
-    {sra_register, {.reg_1 = D}},
+    {sra_register,    {.reg_1 = D}                   },
     // 0x2B: SRA E
-    {sra_register, {.reg_1 = E}},
+    {sra_register,    {.reg_1 = E}                   },
     // 0x2C: SRA H
-    {sra_register, {.reg_1 = H}},
+    {sra_register,    {.reg_1 = H}                   },
     // 0x2D: SRA L
-    {sra_register, {.reg_1 = L}},
+    {sra_register,    {.reg_1 = L}                   },
     // 0x2E: SRA (HL)
-    {sra_address_hl, {}},
+    {sra_address_hl,  {}                             },
     // 0x2F: SRA A
-    {sra_register, {.reg_1 = A}},
+    {sra_register,    {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x30: SWAP B
-    {swap_register, {.reg_1 = B}},
+    {swap_register,   {.reg_1 = B}                   },
     // 0x31: SWAP C
-    {swap_register, {.reg_1 = C}},
+    {swap_register,   {.reg_1 = C}                   },
     // 0x32: SWAP D
-    {swap_register, {.reg_1 = D}},
+    {swap_register,   {.reg_1 = D}                   },
     // 0x33: SWAP E
-    {swap_register, {.reg_1 = E}},
+    {swap_register,   {.reg_1 = E}                   },
     // 0x34: SWAP H
-    {swap_register, {.reg_1 = H}},
+    {swap_register,   {.reg_1 = H}                   },
     // 0x35: SWAP L
-    {swap_register, {.reg_1 = L}},
+    {swap_register,   {.reg_1 = L}                   },
     // 0x36: SWAP (HL)
-    {swap_address_hl, {}},
+    {swap_address_hl, {}                             },
     // 0x37: SWAP A
-    {swap_register, {.reg_1 = A}},
+    {swap_register,   {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x38: SRL B
-    {srl_register, {.reg_1 = B}},
+    {srl_register,    {.reg_1 = B}                   },
     // 0x39: SRL C
-    {srl_register, {.reg_1 = C}},
+    {srl_register,    {.reg_1 = C}                   },
     // 0x3A: SRL D
-    {srl_register, {.reg_1 = D}},
+    {srl_register,    {.reg_1 = D}                   },
     // 0x3B: SRL E
-    {srl_register, {.reg_1 = E}},
+    {srl_register,    {.reg_1 = E}                   },
     // 0x3C: SRL H
-    {srl_register, {.reg_1 = H}},
+    {srl_register,    {.reg_1 = H}                   },
     // 0x3D: SRL L
-    {srl_register, {.reg_1 = L}},
+    {srl_register,    {.reg_1 = L}                   },
     // 0x3E: SRL (HL)
-    {srl_address_hl, {}},
+    {srl_address_hl,  {}                             },
     // 0x3F: SRL A
-    {srl_register, {.reg_1 = A}},
+    {srl_register,    {.reg_1 = A}                   },
     // ---------------------------------------------------------------
     // 0x40: BIT 0, B
-    {bit_register, {.reg_1 = B, .bit_position = 0}},
+    {bit_register,    {.reg_1 = B, .bit_position = 0}},
     // 0x41: BIT 0, C
-    {bit_register, {.reg_1 = C, .bit_position = 0}},
+    {bit_register,    {.reg_1 = C, .bit_position = 0}},
     // 0x42: BIT 0, D
-    {bit_register, {.reg_1 = D, .bit_position = 0}},
+    {bit_register,    {.reg_1 = D, .bit_position = 0}},
     // 0x43: BIT 0, E
-    {bit_register, {.reg_1 = E, .bit_position = 0}},
+    {bit_register,    {.reg_1 = E, .bit_position = 0}},
     // 0x44: BIT 0, H
-    {bit_register, {.reg_1 = H, .bit_position = 0}},
+    {bit_register,    {.reg_1 = H, .bit_position = 0}},
     // 0x45: BIT 0, L
-    {bit_register, {.reg_1 = L, .bit_position = 0}},
+    {bit_register,    {.reg_1 = L, .bit_position = 0}},
     // 0x46: BIT 0, (HL)
-    {bit_address_hl, {.bit_position = 0}},
+    {bit_address_hl,  {.bit_position = 0}            },
     // 0x47: BIT 0, A
-    {bit_register, {.reg_1 = A, .bit_position = 0}},
+    {bit_register,    {.reg_1 = A, .bit_position = 0}},
     // ---------------------------------------------------------------
     // 0x48: BIT 1, B
-    {bit_register, {.reg_1 = B, .bit_position = 1}},
+    {bit_register,    {.reg_1 = B, .bit_position = 1}},
     // 0x49: BIT 1, C
-    {bit_register, {.reg_1 = C, .bit_position = 1}},
+    {bit_register,    {.reg_1 = C, .bit_position = 1}},
     // 0x4A: BIT 1, D
-    {bit_register, {.reg_1 = D, .bit_position = 1}},
+    {bit_register,    {.reg_1 = D, .bit_position = 1}},
     // 0x4B: BIT 1, E
-    {bit_register, {.reg_1 = E, .bit_position = 1}},
+    {bit_register,    {.reg_1 = E, .bit_position = 1}},
     // 0x4C: BIT 1, H
-    {bit_register, {.reg_1 = H, .bit_position = 1}},
+    {bit_register,    {.reg_1 = H, .bit_position = 1}},
     // 0x4D: BIT 1, L
-    {bit_register, {.reg_1 = L, .bit_position = 1}},
+    {bit_register,    {.reg_1 = L, .bit_position = 1}},
     // 0x4E: BIT 1, (HL)
-    {bit_address_hl, {.bit_position = 1}},
+    {bit_address_hl,  {.bit_position = 1}            },
     // 0x4F: BIT 1, A
-    {bit_register, {.reg_1 = A, .bit_position = 1}},
+    {bit_register,    {.reg_1 = A, .bit_position = 1}},
     // ---------------------------------------------------------------
     // 0x50: BIT 2, B
-    {bit_register, {.reg_1 = B, .bit_position = 2}},
+    {bit_register,    {.reg_1 = B, .bit_position = 2}},
     // 0x51: BIT 2, C
-    {bit_register, {.reg_1 = C, .bit_position = 2}},
+    {bit_register,    {.reg_1 = C, .bit_position = 2}},
     // 0x52: BIT 2, D
-    {bit_register, {.reg_1 = D, .bit_position = 2}},
+    {bit_register,    {.reg_1 = D, .bit_position = 2}},
     // 0x53: BIT 2, E
-    {bit_register, {.reg_1 = E, .bit_position = 2}},
+    {bit_register,    {.reg_1 = E, .bit_position = 2}},
     // 0x54: BIT 2, H
-    {bit_register, {.reg_1 = H, .bit_position = 2}},
+    {bit_register,    {.reg_1 = H, .bit_position = 2}},
     // 0x55: BIT 2, L
-    {bit_register, {.reg_1 = L, .bit_position = 2}},
+    {bit_register,    {.reg_1 = L, .bit_position = 2}},
     // 0x56: BIT 2, (HL)
-    {bit_address_hl, {.bit_position = 2}},
+    {bit_address_hl,  {.bit_position = 2}            },
     // 0x57: BIT 2, A
-    {bit_register, {.reg_1 = A, .bit_position = 2}},
+    {bit_register,    {.reg_1 = A, .bit_position = 2}},
     // ---------------------------------------------------------------
     // 0x58: BIT 3, B
-    {bit_register, {.reg_1 = B, .bit_position = 3}},
+    {bit_register,    {.reg_1 = B, .bit_position = 3}},
     // 0x59: BIT 3, C
-    {bit_register, {.reg_1 = C, .bit_position = 3}},
+    {bit_register,    {.reg_1 = C, .bit_position = 3}},
     // 0x5A: BIT 3, D
-    {bit_register, {.reg_1 = D, .bit_position = 3}},
+    {bit_register,    {.reg_1 = D, .bit_position = 3}},
     // 0x5B: BIT 3, E
-    {bit_register, {.reg_1 = E, .bit_position = 3}},
+    {bit_register,    {.reg_1 = E, .bit_position = 3}},
     // 0x5C: BIT 3, H
-    {bit_register, {.reg_1 = H, .bit_position = 3}},
+    {bit_register,    {.reg_1 = H, .bit_position = 3}},
     // 0x5D: BIT 3, L
-    {bit_register, {.reg_1 = L, .bit_position = 3}},
+    {bit_register,    {.reg_1 = L, .bit_position = 3}},
     // 0x5E: BIT 3, (HL)
-    {bit_address_hl, {.bit_position = 3}},
+    {bit_address_hl,  {.bit_position = 3}            },
     // 0x5F: BIT 3, A
-    {bit_register, {.reg_1 = A, .bit_position = 3}},
+    {bit_register,    {.reg_1 = A, .bit_position = 3}},
     // ---------------------------------------------------------------
     // 0x60: BIT 4, B
-    {bit_register, {.reg_1 = B, .bit_position = 4}},
+    {bit_register,    {.reg_1 = B, .bit_position = 4}},
     // 0x61: BIT 4, C
-    {bit_register, {.reg_1 = C, .bit_position = 4}},
+    {bit_register,    {.reg_1 = C, .bit_position = 4}},
     // 0x62: BIT 4, D
-    {bit_register, {.reg_1 = D, .bit_position = 4}},
+    {bit_register,    {.reg_1 = D, .bit_position = 4}},
     // 0x63: BIT 4, E
-    {bit_register, {.reg_1 = E, .bit_position = 4}},
+    {bit_register,    {.reg_1 = E, .bit_position = 4}},
     // 0x64: BIT 4, H
-    {bit_register, {.reg_1 = H, .bit_position = 4}},
+    {bit_register,    {.reg_1 = H, .bit_position = 4}},
     // 0x65: BIT 4, L
-    {bit_register, {.reg_1 = L, .bit_position = 4}},
+    {bit_register,    {.reg_1 = L, .bit_position = 4}},
     // 0x66: BIT 4, (HL)
-    {bit_address_hl, {.bit_position = 4}},
+    {bit_address_hl,  {.bit_position = 4}            },
     // 0x67: BIT 4, A
-    {bit_register, {.reg_1 = A, .bit_position = 4}},
+    {bit_register,    {.reg_1 = A, .bit_position = 4}},
     // ---------------------------------------------------------------
     // 0x68: BIT 5, B
-    {bit_register, {.reg_1 = B, .bit_position = 5}},
+    {bit_register,    {.reg_1 = B, .bit_position = 5}},
     // 0x69: BIT 5, C
-    {bit_register, {.reg_1 = C, .bit_position = 5}},
+    {bit_register,    {.reg_1 = C, .bit_position = 5}},
     // 0x6A: BIT 5, D
-    {bit_register, {.reg_1 = D, .bit_position = 5}},
+    {bit_register,    {.reg_1 = D, .bit_position = 5}},
     // 0x6B: BIT 5, E
-    {bit_register, {.reg_1 = E, .bit_position = 5}},
+    {bit_register,    {.reg_1 = E, .bit_position = 5}},
     // 0x6C: BIT 5, H
-    {bit_register, {.reg_1 = H, .bit_position = 5}},
+    {bit_register,    {.reg_1 = H, .bit_position = 5}},
     // 0x6D: BIT 5, L
-    {bit_register, {.reg_1 = L, .bit_position = 5}},
+    {bit_register,    {.reg_1 = L, .bit_position = 5}},
     // 0x6E: BIT 5, (HL)
-    {bit_address_hl, {.bit_position = 5}},
+    {bit_address_hl,  {.bit_position = 5}            },
     // 0x6F: BIT 5, A
-    {bit_register, {.reg_1 = A, .bit_position = 5}},
+    {bit_register,    {.reg_1 = A, .bit_position = 5}},
     // ---------------------------------------------------------------
     // 0x70: BIT 6, B
-    {bit_register, {.reg_1 = B, .bit_position = 6}},
+    {bit_register,    {.reg_1 = B, .bit_position = 6}},
     // 0x71: BIT 6, C
-    {bit_register, {.reg_1 = C, .bit_position = 6}},
+    {bit_register,    {.reg_1 = C, .bit_position = 6}},
     // 0x72: BIT 6, D
-    {bit_register, {.reg_1 = D, .bit_position = 6}},
+    {bit_register,    {.reg_1 = D, .bit_position = 6}},
     // 0x73: BIT 6, E
-    {bit_register, {.reg_1 = E, .bit_position = 6}},
+    {bit_register,    {.reg_1 = E, .bit_position = 6}},
     // 0x74: BIT 6, H
-    {bit_register, {.reg_1 = H, .bit_position = 6}},
+    {bit_register,    {.reg_1 = H, .bit_position = 6}},
     // 0x75: BIT 6, L
-    {bit_register, {.reg_1 = L, .bit_position = 6}},
+    {bit_register,    {.reg_1 = L, .bit_position = 6}},
     // 0x76: BIT 6, (HL)
-    {bit_address_hl, {.bit_position = 6}},
+    {bit_address_hl,  {.bit_position = 6}            },
     // 0x77: BIT 6, A
-    {bit_register, {.reg_1 = A, .bit_position = 6}},
+    {bit_register,    {.reg_1 = A, .bit_position = 6}},
     // ---------------------------------------------------------------
     // 0x78: BIT 7, B
-    {bit_register, {.reg_1 = B, .bit_position = 7}},
+    {bit_register,    {.reg_1 = B, .bit_position = 7}},
     // 0x79: BIT 7, C
-    {bit_register, {.reg_1 = C, .bit_position = 7}},
+    {bit_register,    {.reg_1 = C, .bit_position = 7}},
     // 0x7A: BIT 7, D
-    {bit_register, {.reg_1 = D, .bit_position = 7}},
+    {bit_register,    {.reg_1 = D, .bit_position = 7}},
     // 0x7B: BIT 7, E
-    {bit_register, {.reg_1 = E, .bit_position = 7}},
+    {bit_register,    {.reg_1 = E, .bit_position = 7}},
     // 0x7C: BIT 7, H
-    {bit_register, {.reg_1 = H, .bit_position = 7}},
+    {bit_register,    {.reg_1 = H, .bit_position = 7}},
     // 0x7D: BIT 7, L
-    {bit_register, {.reg_1 = L, .bit_position = 7}},
+    {bit_register,    {.reg_1 = L, .bit_position = 7}},
     // 0x7E: BIT 7, (HL)
-    {bit_address_hl, {.bit_position = 7}},
+    {bit_address_hl,  {.bit_position = 7}            },
     // 0x7F: BIT 7, A
-    {bit_register, {.reg_1 = A, .bit_position = 7}},
+    {bit_register,    {.reg_1 = A, .bit_position = 7}},
     // ---------------------------------------------------------------
     // 0x80: RES 0, B
-    {res_register, {.reg_1 = B, .bit_position = 0}},
+    {res_register,    {.reg_1 = B, .bit_position = 0}},
     // 0x81: RES 0, C
-    {res_register, {.reg_1 = C, .bit_position = 0}},
+    {res_register,    {.reg_1 = C, .bit_position = 0}},
     // 0x82: RES 0, D
-    {res_register, {.reg_1 = D, .bit_position = 0}},
+    {res_register,    {.reg_1 = D, .bit_position = 0}},
     // 0x83: RES 0, E
-    {res_register, {.reg_1 = E, .bit_position = 0}},
+    {res_register,    {.reg_1 = E, .bit_position = 0}},
     // 0x84: RES 0, H
-    {res_register, {.reg_1 = H, .bit_position = 0}},
+    {res_register,    {.reg_1 = H, .bit_position = 0}},
     // 0x85: RES 0, L
-    {res_register, {.reg_1 = L, .bit_position = 0}},
+    {res_register,    {.reg_1 = L, .bit_position = 0}},
     // 0x86: RES 0, (HL)
-    {res_address_hl, {.bit_position = 0}},
+    {res_address_hl,  {.bit_position = 0}            },
     // 0x87: RES 0, A
-    {res_register, {.reg_1 = A, .bit_position = 0}},
+    {res_register,    {.reg_1 = A, .bit_position = 0}},
     // ---------------------------------------------------------------
     // 0x88: RES 1, B
-    {res_register, {.reg_1 = B, .bit_position = 1}},
+    {res_register,    {.reg_1 = B, .bit_position = 1}},
     // 0x89: RES 1, C
-    {res_register, {.reg_1 = C, .bit_position = 1}},
+    {res_register,    {.reg_1 = C, .bit_position = 1}},
     // 0x8A: RES 1, D
-    {res_register, {.reg_1 = D, .bit_position = 1}},
+    {res_register,    {.reg_1 = D, .bit_position = 1}},
     // 0x8B: RES 1, E
-    {res_register, {.reg_1 = E, .bit_position = 1}},
+    {res_register,    {.reg_1 = E, .bit_position = 1}},
     // 0x8C: RES 1, H
-    {res_register, {.reg_1 = H, .bit_position = 1}},
+    {res_register,    {.reg_1 = H, .bit_position = 1}},
     // 0x8D: RES 1, L
-    {res_register, {.reg_1 = L, .bit_position = 1}},
+    {res_register,    {.reg_1 = L, .bit_position = 1}},
     // 0x8E: RES 1, (HL)
-    {res_address_hl, {.bit_position = 1}},
+    {res_address_hl,  {.bit_position = 1}            },
     // 0x8F: RES 1, A
-    {res_register, {.reg_1 = A, .bit_position = 1}},
+    {res_register,    {.reg_1 = A, .bit_position = 1}},
     // ---------------------------------------------------------------
     // 0x90: RES 2, B
-    {res_register, {.reg_1 = B, .bit_position = 2}},
+    {res_register,    {.reg_1 = B, .bit_position = 2}},
     // 0x91: RES 2, C
-    {res_register, {.reg_1 = C, .bit_position = 2}},
+    {res_register,    {.reg_1 = C, .bit_position = 2}},
     // 0x92: RES 2, D
-    {res_register, {.reg_1 = D, .bit_position = 2}},
+    {res_register,    {.reg_1 = D, .bit_position = 2}},
     // 0x93: RES 2, E
-    {res_register, {.reg_1 = E, .bit_position = 2}},
+    {res_register,    {.reg_1 = E, .bit_position = 2}},
     // 0x94: RES 2, H
-    {res_register, {.reg_1 = H, .bit_position = 2}},
+    {res_register,    {.reg_1 = H, .bit_position = 2}},
     // 0x95: RES 2, L
-    {res_register, {.reg_1 = L, .bit_position = 2}},
+    {res_register,    {.reg_1 = L, .bit_position = 2}},
     // 0x96: RES 2, (HL)
-    {res_address_hl, {.bit_position = 2}},
+    {res_address_hl,  {.bit_position = 2}            },
     // 0x97: RES 2, A
-    {res_register, {.reg_1 = A, .bit_position = 2}},
+    {res_register,    {.reg_1 = A, .bit_position = 2}},
     // ---------------------------------------------------------------
     // 0x98: RES 3, B
-    {res_register, {.reg_1 = B, .bit_position = 3}},
+    {res_register,    {.reg_1 = B, .bit_position = 3}},
     // 0x99: RES 3, C
-    {res_register, {.reg_1 = C, .bit_position = 3}},
+    {res_register,    {.reg_1 = C, .bit_position = 3}},
     // 0x9A: RES 3, D
-    {res_register, {.reg_1 = D, .bit_position = 3}},
+    {res_register,    {.reg_1 = D, .bit_position = 3}},
     // 0x9B: RES 3, E
-    {res_register, {.reg_1 = E, .bit_position = 3}},
+    {res_register,    {.reg_1 = E, .bit_position = 3}},
     // 0x9C: RES 3, H
-    {res_register, {.reg_1 = L, .bit_position = 3}},
+    {res_register,    {.reg_1 = L, .bit_position = 3}},
     // 0x9D: RES 3, L
-    {res_register, {.reg_1 = L, .bit_position = 3}},
+    {res_register,    {.reg_1 = L, .bit_position = 3}},
     // 0x9E: RES 3, (HL)
-    {res_address_hl, {.bit_position = 3}},
+    {res_address_hl,  {.bit_position = 3}            },
     // 0x9F: RES 3, A
-    {res_register, {.reg_1 = A, .bit_position = 3}},
+    {res_register,    {.reg_1 = A, .bit_position = 3}},
     // ---------------------------------------------------------------
     // RES 4 (0xA0-0xA7)
-    {res_register, {.reg_1 = B, .bit_position = 4}},
-    {res_register, {.reg_1 = C, .bit_position = 4}},
-    {res_register, {.reg_1 = D, .bit_position = 4}},
-    {res_register, {.reg_1 = E, .bit_position = 4}},
-    {res_register, {.reg_1 = H, .bit_position = 4}},
-    {res_register, {.reg_1 = L, .bit_position = 4}},
-    {res_address_hl, {.bit_position = 4}},
-    {res_register, {.reg_1 = A, .bit_position = 4}},
+    {res_register,    {.reg_1 = B, .bit_position = 4}},
+    {res_register,    {.reg_1 = C, .bit_position = 4}},
+    {res_register,    {.reg_1 = D, .bit_position = 4}},
+    {res_register,    {.reg_1 = E, .bit_position = 4}},
+    {res_register,    {.reg_1 = H, .bit_position = 4}},
+    {res_register,    {.reg_1 = L, .bit_position = 4}},
+    {res_address_hl,  {.bit_position = 4}            },
+    {res_register,    {.reg_1 = A, .bit_position = 4}},
 
     // RES 5 (0xA8-0xAF)
-    {res_register, {.reg_1 = B, .bit_position = 5}},
-    {res_register, {.reg_1 = C, .bit_position = 5}},
-    {res_register, {.reg_1 = D, .bit_position = 5}},
-    {res_register, {.reg_1 = E, .bit_position = 5}},
-    {res_register, {.reg_1 = H, .bit_position = 5}},
-    {res_register, {.reg_1 = L, .bit_position = 5}},
-    {res_address_hl, {.bit_position = 5}},
-    {res_register, {.reg_1 = A, .bit_position = 5}},
+    {res_register,    {.reg_1 = B, .bit_position = 5}},
+    {res_register,    {.reg_1 = C, .bit_position = 5}},
+    {res_register,    {.reg_1 = D, .bit_position = 5}},
+    {res_register,    {.reg_1 = E, .bit_position = 5}},
+    {res_register,    {.reg_1 = H, .bit_position = 5}},
+    {res_register,    {.reg_1 = L, .bit_position = 5}},
+    {res_address_hl,  {.bit_position = 5}            },
+    {res_register,    {.reg_1 = A, .bit_position = 5}},
 
     // RES 6 (0xB0-0xB7)
-    {res_register, {.reg_1 = B, .bit_position = 6}},
-    {res_register, {.reg_1 = C, .bit_position = 6}},
-    {res_register, {.reg_1 = D, .bit_position = 6}},
-    {res_register, {.reg_1 = E, .bit_position = 6}},
-    {res_register, {.reg_1 = H, .bit_position = 6}},
-    {res_register, {.reg_1 = L, .bit_position = 6}},
-    {res_address_hl, {.bit_position = 6}},
-    {res_register, {.reg_1 = A, .bit_position = 6}},
+    {res_register,    {.reg_1 = B, .bit_position = 6}},
+    {res_register,    {.reg_1 = C, .bit_position = 6}},
+    {res_register,    {.reg_1 = D, .bit_position = 6}},
+    {res_register,    {.reg_1 = E, .bit_position = 6}},
+    {res_register,    {.reg_1 = H, .bit_position = 6}},
+    {res_register,    {.reg_1 = L, .bit_position = 6}},
+    {res_address_hl,  {.bit_position = 6}            },
+    {res_register,    {.reg_1 = A, .bit_position = 6}},
 
     // RES 7 (0xB8-0xBF)
-    {res_register, {.reg_1 = B, .bit_position = 7}},
-    {res_register, {.reg_1 = C, .bit_position = 7}},
-    {res_register, {.reg_1 = D, .bit_position = 7}},
-    {res_register, {.reg_1 = E, .bit_position = 7}},
-    {res_register, {.reg_1 = H, .bit_position = 7}},
-    {res_register, {.reg_1 = L, .bit_position = 7}},
-    {res_address_hl, {.bit_position = 7}},
-    {res_register, {.reg_1 = A, .bit_position = 7}},
+    {res_register,    {.reg_1 = B, .bit_position = 7}},
+    {res_register,    {.reg_1 = C, .bit_position = 7}},
+    {res_register,    {.reg_1 = D, .bit_position = 7}},
+    {res_register,    {.reg_1 = E, .bit_position = 7}},
+    {res_register,    {.reg_1 = H, .bit_position = 7}},
+    {res_register,    {.reg_1 = L, .bit_position = 7}},
+    {res_address_hl,  {.bit_position = 7}            },
+    {res_register,    {.reg_1 = A, .bit_position = 7}},
     // ---------------------------------------------------------------
     // 0xC0: SET 0, B
-    {set_register, {.reg_1 = B, .bit_position = 0}},
+    {set_register,    {.reg_1 = B, .bit_position = 0}},
     // 0xC1: SET 0, C
-    {set_register, {.reg_1 = C, .bit_position = 0}},
+    {set_register,    {.reg_1 = C, .bit_position = 0}},
     // 0xC2: SET 0, D
-    {set_register, {.reg_1 = D, .bit_position = 0}},
+    {set_register,    {.reg_1 = D, .bit_position = 0}},
     // 0xC3: SET 0, E
-    {set_register, {.reg_1 = E, .bit_position = 0}},
+    {set_register,    {.reg_1 = E, .bit_position = 0}},
     // 0xC4: SET 0, H
-    {set_register, {.reg_1 = H, .bit_position = 0}},
+    {set_register,    {.reg_1 = H, .bit_position = 0}},
     // 0xC5: SET 0, L
-    {set_register, {.reg_1 = L, .bit_position = 0}},
+    {set_register,    {.reg_1 = L, .bit_position = 0}},
     // 0xC6: SET 0, (HL)
-    {set_address_hl, {.bit_position = 0}},
+    {set_address_hl,  {.bit_position = 0}            },
     // 0xC7: SET 0, A
-    {set_register, {.reg_1 = A, .bit_position = 0}},
+    {set_register,    {.reg_1 = A, .bit_position = 0}},
     // ---------------------------------------------------------------
     // 0xC8: SET 1, B
-    {set_register, {.reg_1 = B, .bit_position = 1}},
+    {set_register,    {.reg_1 = B, .bit_position = 1}},
     // 0xC9: SET 1, C
-    {set_register, {.reg_1 = C, .bit_position = 1}},
+    {set_register,    {.reg_1 = C, .bit_position = 1}},
     // 0xCA: SET 1, D
-    {set_register, {.reg_1 = D, .bit_position = 1}},
+    {set_register,    {.reg_1 = D, .bit_position = 1}},
     // 0xCB: SET 1, E
-    {set_register, {.reg_1 = E, .bit_position = 1}},
+    {set_register,    {.reg_1 = E, .bit_position = 1}},
     // 0xCC: SET 1, H
-    {set_register, {.reg_1 = H, .bit_position = 1}},
+    {set_register,    {.reg_1 = H, .bit_position = 1}},
     // 0xCD: SET 1, L
-    {set_register, {.reg_1 = L, .bit_position = 1}},
+    {set_register,    {.reg_1 = L, .bit_position = 1}},
     // 0xCE: SET 1, (HL)
-    {set_address_hl, {.bit_position = 1}},
+    {set_address_hl,  {.bit_position = 1}            },
     // 0xCF: SET 1, A
-    {set_register, {.reg_1 = A, .bit_position = 1}},
+    {set_register,    {.reg_1 = A, .bit_position = 1}},
     // ---------------------------------------------------------------
     // 0xD0: SET 2, B
-    {set_register, {.reg_1 = B, .bit_position = 2}},
+    {set_register,    {.reg_1 = B, .bit_position = 2}},
     // 0xD1: SET 2, C
-    {set_register, {.reg_1 = C, .bit_position = 2}},
+    {set_register,    {.reg_1 = C, .bit_position = 2}},
     // 0xD2: SET 2, D
-    {set_register, {.reg_1 = D, .bit_position = 2}},
+    {set_register,    {.reg_1 = D, .bit_position = 2}},
     // 0xD3: SET 2, E
-    {set_register, {.reg_1 = E, .bit_position = 2}},
+    {set_register,    {.reg_1 = E, .bit_position = 2}},
     // 0xD4: SET 2, H
-    {set_register, {.reg_1 = H, .bit_position = 2}},
+    {set_register,    {.reg_1 = H, .bit_position = 2}},
     // 0xD5: SET 2, L
-    {set_register, {.reg_1 = L, .bit_position = 2}},
+    {set_register,    {.reg_1 = L, .bit_position = 2}},
     // 0xD6: SET 2, (HL)
-    {set_address_hl, {.bit_position = 2}},
+    {set_address_hl,  {.bit_position = 2}            },
     // 0xD7: SET 2, A
-    {set_register, {.reg_1 = A, .bit_position = 2}},
+    {set_register,    {.reg_1 = A, .bit_position = 2}},
     // ---------------------------------------------------------------
     // 0xD8: SET 3, B
-    {set_register, {.reg_1 = B, .bit_position = 3}},
+    {set_register,    {.reg_1 = B, .bit_position = 3}},
     // 0xD9: SET 3, C
-    {set_register, {.reg_1 = C, .bit_position = 3}},
+    {set_register,    {.reg_1 = C, .bit_position = 3}},
     // 0xDA: SET 3, D
-    {set_register, {.reg_1 = D, .bit_position = 3}},
+    {set_register,    {.reg_1 = D, .bit_position = 3}},
     // 0xDB: SET 3, E
-    {set_register, {.reg_1 = E, .bit_position = 3}},
+    {set_register,    {.reg_1 = E, .bit_position = 3}},
     // 0xDC: SET 3, H
-    {set_register, {.reg_1 = H, .bit_position = 3}},
+    {set_register,    {.reg_1 = H, .bit_position = 3}},
     // 0xDD: SET 3, L
-    {set_register, {.reg_1 = L, .bit_position = 3}},
+    {set_register,    {.reg_1 = L, .bit_position = 3}},
     // 0xDE: SET 3, (HL)
-    {set_address_hl, {.bit_position = 3}},
+    {set_address_hl,  {.bit_position = 3}            },
     // 0xDF: SET 3, A
-    {set_register, {.reg_1 = A, .bit_position = 3}},
+    {set_register,    {.reg_1 = A, .bit_position = 3}},
     // ---------------------------------------------------------------
     // 0xE0: SET 4, B
-    {set_register, {.reg_1 = B, .bit_position = 4}},
+    {set_register,    {.reg_1 = B, .bit_position = 4}},
     // 0xE1: SET 4, C
-    {set_register, {.reg_1 = C, .bit_position = 4}},
+    {set_register,    {.reg_1 = C, .bit_position = 4}},
     // 0xE2: SET 4, D
-    {set_register, {.reg_1 = D, .bit_position = 4}},
+    {set_register,    {.reg_1 = D, .bit_position = 4}},
     // 0xE3: SET 4, E
-    {set_register, {.reg_1 = E, .bit_position = 4}},
+    {set_register,    {.reg_1 = E, .bit_position = 4}},
     // 0xE4: SET 4, H
-    {set_register, {.reg_1 = H, .bit_position = 4}},
+    {set_register,    {.reg_1 = H, .bit_position = 4}},
     // 0xE5: SET 4, L
-    {set_register, {.reg_1 = L, .bit_position = 4}},
+    {set_register,    {.reg_1 = L, .bit_position = 4}},
     // 0xE6: SET 4, (HL)
-    {set_address_hl, {.bit_position = 4}},
+    {set_address_hl,  {.bit_position = 4}            },
     // 0xE7: SET 4, A
-    {set_register, {.reg_1 = A, .bit_position = 4}},
+    {set_register,    {.reg_1 = A, .bit_position = 4}},
     // ---------------------------------------------------------------
     // 0xE8: SET 5, B
-    {set_register, {.reg_1 = B, .bit_position = 5}},
+    {set_register,    {.reg_1 = B, .bit_position = 5}},
     // 0xE9: SET 5, C
-    {set_register, {.reg_1 = C, .bit_position = 5}},
+    {set_register,    {.reg_1 = C, .bit_position = 5}},
     // 0xEA: SET 5, D
-    {set_register, {.reg_1 = D, .bit_position = 5}},
+    {set_register,    {.reg_1 = D, .bit_position = 5}},
     // 0xEB: SET 5, E
-    {set_register, {.reg_1 = E, .bit_position = 5}},
+    {set_register,    {.reg_1 = E, .bit_position = 5}},
     // 0xEC: SET 5, H
-    {set_register, {.reg_1 = H, .bit_position = 5}},
+    {set_register,    {.reg_1 = H, .bit_position = 5}},
     // 0xED: SET 5, L
-    {set_register, {.reg_1 = L, .bit_position = 5}},
+    {set_register,    {.reg_1 = L, .bit_position = 5}},
     // 0xEE: SET 5, (HL)
-    {set_address_hl, {.bit_position = 5}},
+    {set_address_hl,  {.bit_position = 5}            },
     // 0xEF: SET 5, A
-    {set_register, {.reg_1 = A, .bit_position = 5}},
+    {set_register,    {.reg_1 = A, .bit_position = 5}},
     // ---------------------------------------------------------------
     // 0xF0: SET 6, B
-    {set_register, {.reg_1 = B, .bit_position = 6}},
+    {set_register,    {.reg_1 = B, .bit_position = 6}},
     // 0xF1: SET 6, C
-    {set_register, {.reg_1 = C, .bit_position = 6}},
+    {set_register,    {.reg_1 = C, .bit_position = 6}},
     // 0xF2: SET 6, D
-    {set_register, {.reg_1 = D, .bit_position = 6}},
+    {set_register,    {.reg_1 = D, .bit_position = 6}},
     // 0xF3: SET 6, E
-    {set_register, {.reg_1 = E, .bit_position = 6}},
+    {set_register,    {.reg_1 = E, .bit_position = 6}},
     // 0xF4: SET 6, H
-    {set_register, {.reg_1 = H, .bit_position = 6}},
+    {set_register,    {.reg_1 = H, .bit_position = 6}},
     // 0xF5: SET 6, L
-    {set_register, {.reg_1 = L, .bit_position = 6}},
+    {set_register,    {.reg_1 = L, .bit_position = 6}},
     // 0xF6: SET 6, (HL)
-    {set_address_hl, {.bit_position = 6}},
+    {set_address_hl,  {.bit_position = 6}            },
     // 0xF7: SET 6, A
-    {set_register, {.reg_1 = A, .bit_position = 6}},
+    {set_register,    {.reg_1 = A, .bit_position = 6}},
     // ---------------------------------------------------------------
     // 0xF8: SET 7, B
-    {set_register, {.reg_1 = B, .bit_position = 7}},
+    {set_register,    {.reg_1 = B, .bit_position = 7}},
     // 0xF9: SET 7, C
-    {set_register, {.reg_1 = C, .bit_position = 7}},
+    {set_register,    {.reg_1 = C, .bit_position = 7}},
     // 0xFA: SET 7, D
-    {set_register, {.reg_1 = D, .bit_position = 7}},
+    {set_register,    {.reg_1 = D, .bit_position = 7}},
     // 0xFB: SET 7, E
-    {set_register, {.reg_1 = E, .bit_position = 7}},
+    {set_register,    {.reg_1 = E, .bit_position = 7}},
     // 0xFC: SET 7, H
-    {set_register, {.reg_1 = H, .bit_position = 7}},
+    {set_register,    {.reg_1 = H, .bit_position = 7}},
     // 0xFD: SET 7, L
-    {set_register, {.reg_1 = L, .bit_position = 7}},
+    {set_register,    {.reg_1 = L, .bit_position = 7}},
     // 0xFE: SET 7, (HL)
-    {set_address_hl, {.bit_position = 7}},
+    {set_address_hl,  {.bit_position = 7}            },
     // 0xFF: SET 7, A
-    {set_register, {.reg_1 = A, .bit_position = 7}},
-
+    {set_register,    {.reg_1 = A, .bit_position = 7}},
 };
 
-struct CPU *create_cpu(struct Registers *registers, struct MMU *mmu)
+struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
 {
-    struct CPU *cpu = (struct CPU *)malloc(sizeof(struct CPU));
-    if (cpu == NULL)
-    {
+    struct CPU* cpu = (struct CPU*)malloc(sizeof(struct CPU));
+    if (cpu == NULL) {
         return NULL;
     }
-    cpu->registers = registers;
-    cpu->mmu = mmu;
-    cpu->opcode_cycle_main = opcode_cycle_main;
+    cpu->registers              = registers;
+    cpu->mmu                    = mmu;
+    cpu->opcode_cycle_main      = opcode_cycle_main;
     cpu->opcode_cycle_prefix_cb = opcode_cycle_prefix_cb;
 
     // initialize cpu state
-    cpu->halted = false;
-    cpu->stopped = false;
+    cpu->halted                  = false;
+    cpu->stopped                 = false;
     cpu->interrupt_master_enable = false;
 
     // set method pointers
     cpu->cpu_step_next = cpu_step_next;
 
     // set instruction tables
-    cpu->instruction_table = instruction_table;
+    cpu->instruction_table    = instruction_table;
     cpu->instruction_table_cb = instruction_table_cb;
 
     // set interrupt vector table
@@ -1079,37 +1078,33 @@ struct CPU *create_cpu(struct Registers *registers, struct MMU *mmu)
     return cpu;
 }
 
-void free_cpu(struct CPU *cpu)
+void free_cpu(struct CPU* cpu)
 {
-    if (cpu->registers)
-    {
+    if (cpu->registers) {
         free_registers(cpu->registers);
     }
-    if (cpu->mmu)
-    {
+    if (cpu->mmu) {
         free_mmu(cpu->mmu);
     }
     free(cpu);
 }
 
 // Private: Handle interrupts
-uint8_t handle_interrupts(struct CPU *cpu)
+uint8_t handle_interrupts(struct CPU* cpu)
 {
     // Check if interrupt master enable is disabled
-    if (!cpu->interrupt_master_enable)
-    {
+    if (!cpu->interrupt_master_enable) {
         return 0;
     }
 
     // hard wire interrupt flag and interrupt enable from mmu
-    uint8_t interrupt_flag = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF0F);
+    uint8_t interrupt_flag   = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF0F);
     uint8_t interrupt_enable = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFFFF);
 
     // enable interrupt if interrupt flag is set and interrupt enable is set
     uint8_t interrupt_enabled = interrupt_flag & interrupt_enable;
 
-    if (!interrupt_enabled)
-    {
+    if (!interrupt_enabled) {
         return 0;
     }
 
@@ -1136,7 +1131,8 @@ uint8_t handle_interrupts(struct CPU *cpu)
     // #endif
 
     // set that bit to 0 in interrupt flag
-    cpu->mmu->mmu_set_byte(cpu->mmu, INTERRUPT_FLAG_ADDRESS, interrupt_flag & ~(1 << interrupt_bit));
+    cpu->mmu->mmu_set_byte(
+        cpu->mmu, INTERRUPT_FLAG_ADDRESS, interrupt_flag & ~(1 << interrupt_bit));
 
     // calculate interrupt address
     uint16_t interrupt_address = cpu->interrupt_vector_table[interrupt_bit];
@@ -1152,24 +1148,22 @@ uint8_t handle_interrupts(struct CPU *cpu)
     return 4;
 }
 
-uint8_t cpu_step_next(struct CPU *cpu)
+uint8_t cpu_step_next(struct CPU* cpu)
 {
     // 1. Check interrupts
     uint8_t interrupt_handled = handle_interrupts(cpu);
-    if (interrupt_handled)
-    {
+    if (interrupt_handled) {
         return interrupt_handled;
     }
     // 2. halted?
-    if (cpu->halted)
-    {
+    if (cpu->halted) {
         return 1;
     }
     // 3. step next instruction
     return cpu_step(cpu);
 }
 
-uint8_t cpu_step_read_byte(struct CPU *cpu)
+uint8_t cpu_step_read_byte(struct CPU* cpu)
 {
     // 1. Get byte from MMU
     uint8_t byte = cpu->mmu->mmu_get_byte(cpu->mmu, *(cpu->registers->pc));
@@ -1178,7 +1172,7 @@ uint8_t cpu_step_read_byte(struct CPU *cpu)
     return byte;
 }
 
-uint16_t cpu_step_read_word(struct CPU *cpu)
+uint16_t cpu_step_read_word(struct CPU* cpu)
 {
     // 1. Get word from MMU
     uint16_t word = cpu->mmu->mmu_get_word(cpu->mmu, *(cpu->registers->pc));
@@ -1187,7 +1181,7 @@ uint16_t cpu_step_read_word(struct CPU *cpu)
     return word;
 }
 
-uint8_t cpu_step(struct CPU *cpu)
+uint8_t cpu_step(struct CPU* cpu)
 {
     // 1. Get Op Byte
     cpu->op_code = cpu_step_read_byte(cpu);
@@ -1195,16 +1189,15 @@ uint8_t cpu_step(struct CPU *cpu)
     return cpu_step_execute_op_code(cpu, cpu->op_code);
 }
 
-uint8_t cpu_step_execute_op_code(struct CPU *cpu, uint8_t op_byte)
+uint8_t cpu_step_execute_op_code(struct CPU* cpu, uint8_t op_byte)
 {
-    if (op_byte == CB_PREFIX)
-    {
+    if (op_byte == CB_PREFIX) {
         return cpu_step_execute_prefix_cb(cpu);
     }
     return cpu_step_execute_main(cpu, op_byte);
 }
 
-uint8_t cpu_step_execute_prefix_cb(struct CPU *cpu)
+uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu)
 {
     // 1. Get Op Byte
     cpu->op_code = cpu_step_read_byte(cpu);
@@ -1212,22 +1205,22 @@ uint8_t cpu_step_execute_prefix_cb(struct CPU *cpu)
     return cpu_step_execute_cb_op_code(cpu, cpu->op_code);
 }
 
-uint8_t cpu_step_execute_cb_op_code(struct CPU *cpu, uint8_t op_byte)
+uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte)
 {
     CPU_DEBUG_PRINT("Executing CB Op Code: 0xCB%02x\n", op_byte);
-    struct PackedInstructionParam *param = &cpu->instruction_table_cb[op_byte];
+    struct PackedInstructionParam* param = &cpu->instruction_table_cb[op_byte];
     param->fn(cpu, &param->param);
     return cpu->opcode_cycle_prefix_cb[op_byte] + CB_PREFIX_CYCLES;
 }
 
 // Interrupt Master Enable flag
-bool cpu_get_interrupt_master_enable(struct CPU *cpu)
+bool cpu_get_interrupt_master_enable(struct CPU* cpu)
 {
     return cpu->interrupt_master_enable;
 }
 
 // Set Interrupt Master Enable flag
-void cpu_set_interrupt_master_enable(struct CPU *cpu, bool enable)
+void cpu_set_interrupt_master_enable(struct CPU* cpu, bool enable)
 {
     cpu->interrupt_master_enable = enable;
 }
@@ -1246,16 +1239,16 @@ EXECUTABLE_INSTRUCTION(nop)
 EXECUTABLE_INSTRUCTION(ld_imm_to_register_pair)
 {
     enum RegisterPair register_pair = param->rp_1;
-    uint16_t value = cpu_step_read_word(cpu);
+    uint16_t          value         = cpu_step_read_word(cpu);
     cpu->registers->set_register_pair(cpu->registers, register_pair, value);
 }
 
 EXECUTABLE_INSTRUCTION(ld_register_to_address_register_pair)
 {
-    enum Register from_register = param->reg_1;
+    enum Register     from_register    = param->reg_1;
     enum RegisterPair to_register_pair = param->rp_1;
     uint16_t mmu_address = cpu->registers->get_register_pair(cpu->registers, to_register_pair);
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, from_register);
+    uint8_t  value       = cpu->registers->get_register_byte(cpu->registers, from_register);
     cpu->mmu->mmu_set_byte(cpu->mmu, mmu_address, value);
 }
 
@@ -1266,38 +1259,38 @@ EXECUTABLE_INSTRUCTION(ld_register_to_address_register_pair)
 EXECUTABLE_INSTRUCTION(ld_imm_to_register)
 {
     enum Register register_to = param->reg_1;
-    uint8_t value = cpu_step_read_byte(cpu);
+    uint8_t       value       = cpu_step_read_byte(cpu);
     cpu->registers->set_register_byte(cpu->registers, register_to, value);
 }
 
 EXECUTABLE_INSTRUCTION(ld_register_to_register)
 {
     enum Register from_register = param->reg_1;
-    enum Register to_register = param->reg_2;
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, from_register);
+    enum Register to_register   = param->reg_2;
+    uint8_t       value         = cpu->registers->get_register_byte(cpu->registers, from_register);
     cpu->registers->set_register_byte(cpu->registers, to_register, value);
 }
 
 EXECUTABLE_INSTRUCTION(ld_address_hl_to_register)
 {
     enum Register register_to = param->reg_1;
-    uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint16_t      address     = cpu->registers->get_register_pair(cpu->registers, HL);
+    uint8_t       value       = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->registers->set_register_byte(cpu->registers, register_to, value);
 }
 
 EXECUTABLE_INSTRUCTION(ld_register_to_address_hl)
 {
     enum Register from_register = param->reg_1;
-    uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, from_register);
+    uint16_t      address       = cpu->registers->get_register_pair(cpu->registers, HL);
+    uint8_t       value         = cpu->registers->get_register_byte(cpu->registers, from_register);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, value);
 }
 
 EXECUTABLE_INSTRUCTION(ld_imm_to_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu_step_read_byte(cpu);
+    uint8_t  value   = cpu_step_read_byte(cpu);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, value);
 }
 
@@ -1306,7 +1299,7 @@ EXECUTABLE_INSTRUCTION(ld_imm_to_address_hl)
 EXECUTABLE_INSTRUCTION(ld_sp_to_address_imm)
 {
     uint16_t address = cpu_step_read_word(cpu);
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t sp      = cpu->registers->get_control_register(cpu->registers, SP);
     cpu->mmu->mmu_set_word(cpu->mmu, address, sp);
 }
 
@@ -1319,8 +1312,8 @@ EXECUTABLE_INSTRUCTION(ld_hl_to_sp)
 EXECUTABLE_INSTRUCTION(push_register_pair)
 {
     enum RegisterPair register_pair = param->rp_1;
-    uint16_t value = cpu->registers->get_register_pair(cpu->registers, register_pair);
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t          value = cpu->registers->get_register_pair(cpu->registers, register_pair);
+    uint16_t          sp    = cpu->registers->get_control_register(cpu->registers, SP);
     sp -= 2;
     cpu->mmu->mmu_set_word(cpu->mmu, sp, value);
     cpu->registers->set_control_register(cpu->registers, SP, sp);
@@ -1329,12 +1322,11 @@ EXECUTABLE_INSTRUCTION(push_register_pair)
 EXECUTABLE_INSTRUCTION(pop_register_pair)
 {
     enum RegisterPair register_pair = param->rp_1;
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
-    uint16_t value = cpu->mmu->mmu_get_word(cpu->mmu, sp);
+    uint16_t          sp            = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t          value         = cpu->mmu->mmu_get_word(cpu->mmu, sp);
     cpu->registers->set_register_pair(cpu->registers, register_pair, value);
     cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
-    if (register_pair == AF)
-    {
+    if (register_pair == AF) {
         // set all flags to true
         cpu->registers->set_flag_z(cpu->registers, true);
         cpu->registers->set_flag_n(cpu->registers, true);
@@ -1348,9 +1340,9 @@ EXECUTABLE_INSTRUCTION(pop_register_pair)
 EXECUTABLE_INSTRUCTION(add_register_to_a)
 {
     enum Register from_register = param->reg_1;
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, from_register);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
-    uint16_t result = a + value;
+    uint8_t       value         = cpu->registers->get_register_byte(cpu->registers, from_register);
+    uint8_t       a             = cpu->registers->get_register_byte(cpu->registers, A);
+    uint16_t      result        = a + value;
 
     // Set flags
     cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
@@ -1363,8 +1355,8 @@ EXECUTABLE_INSTRUCTION(add_register_to_a)
 
 EXECUTABLE_INSTRUCTION(add_imm_to_a)
 {
-    uint8_t value = cpu_step_read_byte(cpu);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  value  = cpu_step_read_byte(cpu);
+    uint8_t  a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint16_t result = a + value;
 
     // Set flags
@@ -1378,10 +1370,10 @@ EXECUTABLE_INSTRUCTION(add_imm_to_a)
 
 // ADC implementation
 
-void adc_a(struct CPU *cpu, uint8_t *value)
+void adc_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t  a      = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  carry  = cpu->registers->get_flag_c(cpu->registers);
     uint16_t result = a + *value + carry;
 
     cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
@@ -1399,7 +1391,7 @@ EXECUTABLE_INSTRUCTION(adc_imm_to_a)
 }
 
 // INC/DEC implementations
-void inc(struct CPU *cpu, uint8_t *value)
+void inc(struct CPU* cpu, uint8_t* value)
 {
     uint8_t result = *value + 1;
 
@@ -1412,8 +1404,8 @@ void inc(struct CPU *cpu, uint8_t *value)
 
 EXECUTABLE_INSTRUCTION(inc_register)
 {
-    enum Register reg = param->reg_1;
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, reg);
+    enum Register reg   = param->reg_1;
+    uint8_t       value = cpu->registers->get_register_byte(cpu->registers, reg);
     inc(cpu, &value);
     cpu->registers->set_register_byte(cpu->registers, reg, value);
 }
@@ -1421,12 +1413,12 @@ EXECUTABLE_INSTRUCTION(inc_register)
 EXECUTABLE_INSTRUCTION(inc_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     inc(cpu, &value);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, value);
 }
 
-void dec(struct CPU *cpu, uint8_t *value)
+void dec(struct CPU* cpu, uint8_t* value)
 {
     uint8_t result = *value - 1;
 
@@ -1439,8 +1431,8 @@ void dec(struct CPU *cpu, uint8_t *value)
 
 EXECUTABLE_INSTRUCTION(dec_register)
 {
-    enum Register reg = param->reg_1;
-    uint8_t value = cpu->registers->get_register_byte(cpu->registers, reg);
+    enum Register reg   = param->reg_1;
+    uint8_t       value = cpu->registers->get_register_byte(cpu->registers, reg);
     dec(cpu, &value);
     cpu->registers->set_register_byte(cpu->registers, reg, value);
 }
@@ -1448,14 +1440,14 @@ EXECUTABLE_INSTRUCTION(dec_register)
 EXECUTABLE_INSTRUCTION(dec_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     dec(cpu, &value);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, value);
 }
 
-void add_hl(struct CPU *cpu, uint16_t *value)
+void add_hl(struct CPU* cpu, uint16_t* value)
 {
-    uint16_t hl = cpu->registers->get_register_pair(cpu->registers, HL);
+    uint16_t hl     = cpu->registers->get_register_pair(cpu->registers, HL);
     uint32_t result = hl + *value;
 
     cpu->registers->set_flag_n(cpu->registers, false);
@@ -1467,8 +1459,8 @@ void add_hl(struct CPU *cpu, uint16_t *value)
 
 EXECUTABLE_INSTRUCTION(add_hl_to_register_pair)
 {
-    enum RegisterPair rp = param->rp_1;
-    uint16_t value = cpu->registers->get_register_pair(cpu->registers, rp);
+    enum RegisterPair rp    = param->rp_1;
+    uint16_t          value = cpu->registers->get_register_pair(cpu->registers, rp);
     add_hl(cpu, &value);
 }
 
@@ -1480,8 +1472,8 @@ EXECUTABLE_INSTRUCTION(add_sp_to_hl)
 
 EXECUTABLE_INSTRUCTION(add_imm_to_sp)
 {
-    int8_t value = (int8_t)cpu_step_read_byte(cpu);
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    int8_t   value  = (int8_t)cpu_step_read_byte(cpu);
+    uint16_t sp     = cpu->registers->get_control_register(cpu->registers, SP);
     uint16_t result = sp + value;
 
     cpu->registers->set_flag_z(cpu->registers, false);
@@ -1494,18 +1486,16 @@ EXECUTABLE_INSTRUCTION(add_imm_to_sp)
 
 EXECUTABLE_INSTRUCTION(daa)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t adjust = 0;
 
     if (cpu->registers->get_flag_h(cpu->registers) ||
-        (!cpu->registers->get_flag_n(cpu->registers) && (a & 0xF) > 9))
-    {
+        (!cpu->registers->get_flag_n(cpu->registers) && (a & 0xF) > 9)) {
         adjust |= 0x06;
     }
 
     if (cpu->registers->get_flag_c(cpu->registers) ||
-        (!cpu->registers->get_flag_n(cpu->registers) && a > 0x99))
-    {
+        (!cpu->registers->get_flag_n(cpu->registers) && a > 0x99)) {
         adjust |= 0x60;
         cpu->registers->set_flag_c(cpu->registers, true);
     }
@@ -1518,7 +1508,7 @@ EXECUTABLE_INSTRUCTION(daa)
 EXECUTABLE_INSTRUCTION(cpl)
 {
     uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
-    a = ~a;
+    a         = ~a;
     cpu->registers->set_flag_n(cpu->registers, true);
     cpu->registers->set_flag_h(cpu->registers, true);
     cpu->registers->set_register_byte(cpu->registers, A, a);
@@ -1527,9 +1517,9 @@ EXECUTABLE_INSTRUCTION(cpl)
 // Rotate and shift instructions
 EXECUTABLE_INSTRUCTION(rlca)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a     = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t carry = (a & 0x80) >> 7;
-    a = (a << 1) | carry;
+    a             = (a << 1) | carry;
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
@@ -1541,10 +1531,10 @@ EXECUTABLE_INSTRUCTION(rlca)
 
 EXECUTABLE_INSTRUCTION(rla)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a         = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t old_carry = cpu->registers->get_flag_c(cpu->registers);
     uint8_t new_carry = (a & 0x80) >> 7;
-    a = (a << 1) | old_carry;
+    a                 = (a << 1) | old_carry;
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
@@ -1556,9 +1546,9 @@ EXECUTABLE_INSTRUCTION(rla)
 
 EXECUTABLE_INSTRUCTION(rrca)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a     = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t carry = a & 0x01;
-    a = (a >> 1) | (carry << 7);
+    a             = (a >> 1) | (carry << 7);
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
@@ -1570,10 +1560,10 @@ EXECUTABLE_INSTRUCTION(rrca)
 
 EXECUTABLE_INSTRUCTION(rra)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a         = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t old_carry = cpu->registers->get_flag_c(cpu->registers);
     uint8_t new_carry = a & 0x01;
-    a = (a >> 1) | (old_carry << 7);
+    a                 = (a >> 1) | (old_carry << 7);
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
@@ -1598,28 +1588,18 @@ EXECUTABLE_INSTRUCTION(jp_hl)
 
 EXECUTABLE_INSTRUCTION(jp_cc_imm)
 {
-    uint16_t address = cpu_step_read_word(cpu);
+    uint16_t           address   = cpu_step_read_word(cpu);
     enum JumpCondition condition = param->cc;
-    bool jump = false;
+    bool               jump      = false;
 
-    switch (condition)
-    {
-    case JumpCondition_NZ:
-        jump = !cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_Z:
-        jump = cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_NC:
-        jump = !cpu->registers->get_flag_c(cpu->registers);
-        break;
-    case JumpCondition_C:
-        jump = cpu->registers->get_flag_c(cpu->registers);
-        break;
+    switch (condition) {
+    case JumpCondition_NZ: jump = !cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_Z: jump = cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_NC: jump = !cpu->registers->get_flag_c(cpu->registers); break;
+    case JumpCondition_C: jump = cpu->registers->get_flag_c(cpu->registers); break;
     }
 
-    if (jump)
-    {
+    if (jump) {
         cpu->registers->set_control_register(cpu->registers, PC, address);
         param->result_is_alternative = true;
     }
@@ -1627,35 +1607,25 @@ EXECUTABLE_INSTRUCTION(jp_cc_imm)
 
 EXECUTABLE_INSTRUCTION(jr_imm)
 {
-    int8_t offset = (int8_t)cpu_step_read_byte(cpu);
-    uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
+    int8_t   offset = (int8_t)cpu_step_read_byte(cpu);
+    uint16_t pc     = cpu->registers->get_control_register(cpu->registers, PC);
     cpu->registers->set_control_register(cpu->registers, PC, pc + offset);
 }
 
 EXECUTABLE_INSTRUCTION(jr_cc_imm)
 {
-    int8_t offset = (int8_t)cpu_step_read_byte(cpu);
+    int8_t             offset    = (int8_t)cpu_step_read_byte(cpu);
     enum JumpCondition condition = param->cc;
-    bool jump = false;
+    bool               jump      = false;
 
-    switch (condition)
-    {
-    case JumpCondition_NZ:
-        jump = !cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_Z:
-        jump = cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_NC:
-        jump = !cpu->registers->get_flag_c(cpu->registers);
-        break;
-    case JumpCondition_C:
-        jump = cpu->registers->get_flag_c(cpu->registers);
-        break;
+    switch (condition) {
+    case JumpCondition_NZ: jump = !cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_Z: jump = cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_NC: jump = !cpu->registers->get_flag_c(cpu->registers); break;
+    case JumpCondition_C: jump = cpu->registers->get_flag_c(cpu->registers); break;
     }
 
-    if (jump)
-    {
+    if (jump) {
         uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
         cpu->registers->set_control_register(cpu->registers, PC, pc + offset);
         param->result_is_alternative = true;
@@ -1665,8 +1635,8 @@ EXECUTABLE_INSTRUCTION(jr_cc_imm)
 EXECUTABLE_INSTRUCTION(call_imm)
 {
     uint16_t address = cpu_step_read_word(cpu);
-    uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t pc      = cpu->registers->get_control_register(cpu->registers, PC);
+    uint16_t sp      = cpu->registers->get_control_register(cpu->registers, SP);
 
     sp -= 2;
     cpu->mmu->mmu_set_word(cpu->mmu, sp, pc);
@@ -1676,28 +1646,18 @@ EXECUTABLE_INSTRUCTION(call_imm)
 
 EXECUTABLE_INSTRUCTION(call_cc_imm)
 {
-    uint16_t address = cpu_step_read_word(cpu);
+    uint16_t           address   = cpu_step_read_word(cpu);
     enum JumpCondition condition = param->cc;
-    bool jump = false;
+    bool               jump      = false;
 
-    switch (condition)
-    {
-    case JumpCondition_NZ:
-        jump = !cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_Z:
-        jump = cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_NC:
-        jump = !cpu->registers->get_flag_c(cpu->registers);
-        break;
-    case JumpCondition_C:
-        jump = cpu->registers->get_flag_c(cpu->registers);
-        break;
+    switch (condition) {
+    case JumpCondition_NZ: jump = !cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_Z: jump = cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_NC: jump = !cpu->registers->get_flag_c(cpu->registers); break;
+    case JumpCondition_C: jump = cpu->registers->get_flag_c(cpu->registers); break;
     }
 
-    if (jump)
-    {
+    if (jump) {
         uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
         uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
         sp -= 2;
@@ -1710,7 +1670,7 @@ EXECUTABLE_INSTRUCTION(call_cc_imm)
 
 EXECUTABLE_INSTRUCTION(ret)
 {
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t sp      = cpu->registers->get_control_register(cpu->registers, SP);
     uint16_t address = cpu->mmu->mmu_get_word(cpu->mmu, sp);
     cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
     cpu->registers->set_control_register(cpu->registers, PC, address);
@@ -1719,27 +1679,17 @@ EXECUTABLE_INSTRUCTION(ret)
 EXECUTABLE_INSTRUCTION(ret_cc)
 {
     enum JumpCondition condition = param->cc;
-    bool jump = false;
+    bool               jump      = false;
 
-    switch (condition)
-    {
-    case JumpCondition_NZ:
-        jump = !cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_Z:
-        jump = cpu->registers->get_flag_z(cpu->registers);
-        break;
-    case JumpCondition_NC:
-        jump = !cpu->registers->get_flag_c(cpu->registers);
-        break;
-    case JumpCondition_C:
-        jump = cpu->registers->get_flag_c(cpu->registers);
-        break;
+    switch (condition) {
+    case JumpCondition_NZ: jump = !cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_Z: jump = cpu->registers->get_flag_z(cpu->registers); break;
+    case JumpCondition_NC: jump = !cpu->registers->get_flag_c(cpu->registers); break;
+    case JumpCondition_C: jump = cpu->registers->get_flag_c(cpu->registers); break;
     }
 
-    if (jump)
-    {
-        uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    if (jump) {
+        uint16_t sp      = cpu->registers->get_control_register(cpu->registers, SP);
         uint16_t address = cpu->mmu->mmu_get_word(cpu->mmu, sp);
         cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
         cpu->registers->set_control_register(cpu->registers, PC, address);
@@ -1749,7 +1699,7 @@ EXECUTABLE_INSTRUCTION(ret_cc)
 
 EXECUTABLE_INSTRUCTION(reti)
 {
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    uint16_t sp      = cpu->registers->get_control_register(cpu->registers, SP);
     uint16_t address = cpu->mmu->mmu_get_word(cpu->mmu, sp);
     cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
     cpu->registers->set_control_register(cpu->registers, PC, address);
@@ -1757,7 +1707,7 @@ EXECUTABLE_INSTRUCTION(reti)
     cpu_set_interrupt_master_enable(cpu, true);
 }
 
-void rst(struct CPU *cpu, uint8_t n)
+void rst(struct CPU* cpu, uint8_t n)
 {
     uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
     uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
@@ -1809,28 +1759,28 @@ EXECUTABLE_INSTRUCTION(rst_38h)
 }
 
 // Helper functions for 16-bit arithmetic
-void inc_16_bit(struct CPU *cpu, uint16_t *value)
+void inc_16_bit(struct CPU* cpu, uint16_t* value)
 {
     (*value)++;
 }
 
-void dec_16_bit(struct CPU *cpu, uint16_t *value)
+void dec_16_bit(struct CPU* cpu, uint16_t* value)
 {
     (*value)--;
 }
 
 EXECUTABLE_INSTRUCTION(inc_register_pair)
 {
-    enum RegisterPair rp = param->rp_1;
-    uint16_t value = cpu->registers->get_register_pair(cpu->registers, rp);
+    enum RegisterPair rp    = param->rp_1;
+    uint16_t          value = cpu->registers->get_register_pair(cpu->registers, rp);
     inc_16_bit(cpu, &value);
     cpu->registers->set_register_pair(cpu->registers, rp, value);
 }
 
 EXECUTABLE_INSTRUCTION(dec_register_pair)
 {
-    enum RegisterPair rp = param->rp_1;
-    uint16_t value = cpu->registers->get_register_pair(cpu->registers, rp);
+    enum RegisterPair rp    = param->rp_1;
+    uint16_t          value = cpu->registers->get_register_pair(cpu->registers, rp);
     dec_16_bit(cpu, &value);
     cpu->registers->set_register_pair(cpu->registers, rp, value);
 }
@@ -1887,8 +1837,8 @@ EXECUTABLE_INSTRUCTION(ei)
 
 EXECUTABLE_INSTRUCTION(ld_sp_plus_imm_to_hl)
 {
-    int8_t offset = (int8_t)cpu_step_read_byte(cpu);
-    uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
+    int8_t   offset = (int8_t)cpu_step_read_byte(cpu);
+    uint16_t sp     = cpu->registers->get_control_register(cpu->registers, SP);
     uint16_t result = sp + offset;
 
     cpu->registers->set_flag_z(cpu->registers, false);
@@ -1902,42 +1852,42 @@ EXECUTABLE_INSTRUCTION(ld_sp_plus_imm_to_hl)
 EXECUTABLE_INSTRUCTION(ld_a_to_address_imm)
 {
     uint16_t address = cpu_step_read_word(cpu);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  a       = cpu->registers->get_register_byte(cpu->registers, A);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, a);
 }
 
 EXECUTABLE_INSTRUCTION(ld_address_imm_to_a)
 {
     uint16_t address = cpu_step_read_word(cpu);
-    uint8_t a = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  a       = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->registers->set_register_byte(cpu->registers, A, a);
 }
 
 EXECUTABLE_INSTRUCTION(ld_a_to_zero_page_address_c)
 {
     uint8_t offset = cpu->registers->get_register_byte(cpu->registers, C);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     cpu->mmu->mmu_set_byte(cpu->mmu, 0xFF00 + offset, a);
 }
 
 EXECUTABLE_INSTRUCTION(ld_a_to_zero_page_address_imm)
 {
     uint8_t offset = cpu_step_read_byte(cpu);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     cpu->mmu->mmu_set_byte(cpu->mmu, 0xFF00 + offset, a);
 }
 
 EXECUTABLE_INSTRUCTION(ld_zero_page_address_imm_to_a)
 {
     uint8_t offset = cpu_step_read_byte(cpu);
-    uint8_t a = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF00 + offset);
+    uint8_t a      = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF00 + offset);
     cpu->registers->set_register_byte(cpu->registers, A, a);
 }
 
 EXECUTABLE_INSTRUCTION(ld_zero_page_address_c_to_a)
 {
     uint8_t offset = cpu->registers->get_register_byte(cpu->registers, C);
-    uint8_t a = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF00 + offset);
+    uint8_t a      = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF00 + offset);
     cpu->registers->set_register_byte(cpu->registers, A, a);
 }
 
@@ -1950,7 +1900,7 @@ EXECUTABLE_INSTRUCTION(ld_imm_to_sp)
 EXECUTABLE_INSTRUCTION(ld_a_to_address_hl_inc_hl)
 {
     uint16_t hl = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  a  = cpu->registers->get_register_byte(cpu->registers, A);
     cpu->mmu->mmu_set_byte(cpu->mmu, hl, a);
     cpu->registers->set_register_pair(cpu->registers, HL, hl + 1);
 }
@@ -1958,7 +1908,7 @@ EXECUTABLE_INSTRUCTION(ld_a_to_address_hl_inc_hl)
 EXECUTABLE_INSTRUCTION(ld_address_hl_to_a_inc_hl)
 {
     uint16_t hl = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t a = cpu->mmu->mmu_get_byte(cpu->mmu, hl);
+    uint8_t  a  = cpu->mmu->mmu_get_byte(cpu->mmu, hl);
     cpu->registers->set_register_byte(cpu->registers, A, a);
     cpu->registers->set_register_pair(cpu->registers, HL, hl + 1);
 }
@@ -1966,7 +1916,7 @@ EXECUTABLE_INSTRUCTION(ld_address_hl_to_a_inc_hl)
 EXECUTABLE_INSTRUCTION(ld_a_to_address_hl_dec_hl)
 {
     uint16_t hl = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  a  = cpu->registers->get_register_byte(cpu->registers, A);
     cpu->mmu->mmu_set_byte(cpu->mmu, hl, a);
     cpu->registers->set_register_pair(cpu->registers, HL, hl - 1);
 }
@@ -1974,73 +1924,73 @@ EXECUTABLE_INSTRUCTION(ld_a_to_address_hl_dec_hl)
 EXECUTABLE_INSTRUCTION(ld_address_hl_to_a_dec_hl)
 {
     uint16_t hl = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t a = cpu->mmu->mmu_get_byte(cpu->mmu, hl);
+    uint8_t  a  = cpu->mmu->mmu_get_byte(cpu->mmu, hl);
     cpu->registers->set_register_byte(cpu->registers, A, a);
     cpu->registers->set_register_pair(cpu->registers, HL, hl - 1);
 }
 
 EXECUTABLE_INSTRUCTION(ld_address_register_pair_to_register)
 {
-    enum Register reg = param->reg_1;
-    enum RegisterPair rp = param->rp_1;
-    uint16_t address = cpu->registers->get_register_pair(cpu->registers, rp);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    enum Register     reg     = param->reg_1;
+    enum RegisterPair rp      = param->rp_1;
+    uint16_t          address = cpu->registers->get_register_pair(cpu->registers, rp);
+    uint8_t           value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->registers->set_register_byte(cpu->registers, reg, value);
 }
 
 EXECUTABLE_INSTRUCTION(add_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     add_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(adc_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     adc_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(sub_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     sub_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(sbc_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     sbc_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(and_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     and_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(xor_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     xor_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(or_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     or_a(cpu, &value);
 }
 
 EXECUTABLE_INSTRUCTION(cp_address_hl_to_a)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cp_a(cpu, &value);
 }
 
@@ -2135,9 +2085,9 @@ EXECUTABLE_INSTRUCTION(prefix_cb)
     cpu_step_execute_cb_op_code(cpu, op_byte);
 }
 
-void add_a(struct CPU *cpu, uint8_t *value)
+void add_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a + *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2148,9 +2098,9 @@ void add_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void sub_a(struct CPU *cpu, uint8_t *value)
+void sub_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a - *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2161,10 +2111,10 @@ void sub_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void sbc_a(struct CPU *cpu, uint8_t *value)
+void sbc_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t carry  = cpu->registers->get_flag_c(cpu->registers);
     uint8_t result = a - *value - carry;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2175,9 +2125,9 @@ void sbc_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void and_a(struct CPU *cpu, uint8_t *value)
+void and_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a & *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2188,9 +2138,9 @@ void and_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void xor_a(struct CPU *cpu, uint8_t *value)
+void xor_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a ^ *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2201,9 +2151,9 @@ void xor_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void or_a(struct CPU *cpu, uint8_t *value)
+void or_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a | *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2214,9 +2164,9 @@ void or_a(struct CPU *cpu, uint8_t *value)
     cpu->registers->set_register_byte(cpu->registers, A, result);
 }
 
-void cp_a(struct CPU *cpu, uint8_t *value)
+void cp_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
     uint8_t result = a - *value;
 
     cpu->registers->set_flag_z(cpu->registers, result == 0);
@@ -2227,10 +2177,10 @@ void cp_a(struct CPU *cpu, uint8_t *value)
 
 // CB prefix functions
 
-uint8_t rlc(struct CPU *cpu, uint8_t value)
+uint8_t rlc(struct CPU* cpu, uint8_t value)
 {
     uint8_t carry = (value & 0x80) >> 7;
-    value = (value << 1) | carry;
+    value         = (value << 1) | carry;
     cpu->registers->set_flag_c(cpu->registers, carry);
     return value;
 }
@@ -2244,14 +2194,14 @@ EXECUTABLE_INSTRUCTION(rlc_register)
 EXECUTABLE_INSTRUCTION(rlc_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, rlc(cpu, value));
 }
 
-uint8_t rrc(struct CPU *cpu, uint8_t value)
+uint8_t rrc(struct CPU* cpu, uint8_t value)
 {
     uint8_t carry = (value & 0x01);
-    value = (value >> 1) | (carry << 7);
+    value         = (value >> 1) | (carry << 7);
     cpu->registers->set_flag_c(cpu->registers, carry);
     return value;
 }
@@ -2265,15 +2215,15 @@ EXECUTABLE_INSTRUCTION(rrc_register)
 EXECUTABLE_INSTRUCTION(rrc_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, rrc(cpu, value));
 }
 
-uint8_t rl(struct CPU *cpu, uint8_t value)
+uint8_t rl(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
     uint8_t carry_temp = (value & 0x80) >> 7;
-    value = (value << 1) | carry;
+    value              = (value << 1) | carry;
     cpu->registers->set_flag_c(cpu->registers, carry_temp);
     return value;
 }
@@ -2287,15 +2237,15 @@ EXECUTABLE_INSTRUCTION(rl_register)
 EXECUTABLE_INSTRUCTION(rl_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, rl(cpu, value));
 }
 
-uint8_t rr(struct CPU *cpu, uint8_t value)
+uint8_t rr(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
     uint8_t carry_temp = (value & 0x01);
-    value = (value >> 1) | (carry << 7);
+    value              = (value >> 1) | (carry << 7);
     cpu->registers->set_flag_c(cpu->registers, carry_temp);
     return value;
 }
@@ -2309,13 +2259,13 @@ EXECUTABLE_INSTRUCTION(rr_register)
 EXECUTABLE_INSTRUCTION(rr_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, rr(cpu, value));
 }
 
-uint8_t sla(struct CPU *cpu, uint8_t value)
+uint8_t sla(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
     uint8_t carry_temp = (value & 0x80) >> 7;
     value <<= 1;
     cpu->registers->set_flag_c(cpu->registers, carry_temp);
@@ -2331,15 +2281,15 @@ EXECUTABLE_INSTRUCTION(sla_register)
 EXECUTABLE_INSTRUCTION(sla_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, sla(cpu, value));
 }
 
-uint8_t sra(struct CPU *cpu, uint8_t value)
+uint8_t sra(struct CPU* cpu, uint8_t value)
 {
-    uint8_t msb = value & 0x80;
+    uint8_t msb   = value & 0x80;
     uint8_t carry = value & 0x01;
-    value = (value >> 1) | msb;
+    value         = (value >> 1) | msb;
     cpu->registers->set_flag_c(cpu->registers, carry);
     return value;
 }
@@ -2347,20 +2297,20 @@ uint8_t sra(struct CPU *cpu, uint8_t value)
 EXECUTABLE_INSTRUCTION(sra_register)
 {
     uint8_t value = cpu->registers->get_register_byte(cpu->registers, param->reg_1);
-    uint8_t msb = value & 0x80;
+    uint8_t msb   = value & 0x80;
     cpu->registers->set_register_byte(cpu->registers, param->reg_1, sra(cpu, value));
 }
 
 EXECUTABLE_INSTRUCTION(sra_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
-    uint8_t msb = value & 0x80;
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  msb     = value & 0x80;
     cpu->mmu->mmu_set_byte(cpu->mmu, address, sra(cpu, value));
 }
 
 // Bit manipulation instructions
-uint8_t swap(struct CPU *cpu, uint8_t value)
+uint8_t swap(struct CPU* cpu, uint8_t value)
 {
     uint8_t result = (value >> 4) | (value << 4);
 
@@ -2381,13 +2331,13 @@ EXECUTABLE_INSTRUCTION(swap_register)
 EXECUTABLE_INSTRUCTION(swap_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, swap(cpu, value));
 }
 
-uint8_t srl(struct CPU *cpu, uint8_t value)
+uint8_t srl(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
     uint8_t carry_temp = value & 0x01;
     value >>= 1;
     cpu->registers->set_flag_c(cpu->registers, carry_temp);
@@ -2403,11 +2353,11 @@ EXECUTABLE_INSTRUCTION(srl_register)
 EXECUTABLE_INSTRUCTION(srl_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, srl(cpu, value));
 }
 
-uint8_t bit(struct CPU *cpu, uint8_t value, uint8_t bit_position)
+uint8_t bit(struct CPU* cpu, uint8_t value, uint8_t bit_position)
 {
     uint8_t bit_value = (value >> bit_position) & 0x01;
     cpu->registers->set_flag_z(cpu->registers, bit_value == 0);
@@ -2419,17 +2369,18 @@ uint8_t bit(struct CPU *cpu, uint8_t value, uint8_t bit_position)
 EXECUTABLE_INSTRUCTION(bit_register)
 {
     uint8_t value = cpu->registers->get_register_byte(cpu->registers, param->reg_1);
-    cpu->registers->set_register_byte(cpu->registers, param->reg_1, bit(cpu, value, param->bit_position));
+    cpu->registers->set_register_byte(
+        cpu->registers, param->reg_1, bit(cpu, value, param->bit_position));
 }
 
 EXECUTABLE_INSTRUCTION(bit_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, bit(cpu, value, param->bit_position));
 }
 
-uint8_t res(struct CPU *cpu, uint8_t value, uint8_t bit_position)
+uint8_t res(struct CPU* cpu, uint8_t value, uint8_t bit_position)
 {
     return value & ~(1 << bit_position);
 }
@@ -2437,17 +2388,18 @@ uint8_t res(struct CPU *cpu, uint8_t value, uint8_t bit_position)
 EXECUTABLE_INSTRUCTION(res_register)
 {
     uint8_t value = cpu->registers->get_register_byte(cpu->registers, param->reg_1);
-    cpu->registers->set_register_byte(cpu->registers, param->reg_1, res(cpu, value, param->bit_position));
+    cpu->registers->set_register_byte(
+        cpu->registers, param->reg_1, res(cpu, value, param->bit_position));
 }
 
 EXECUTABLE_INSTRUCTION(res_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, res(cpu, value, param->bit_position));
 }
 
-uint8_t set(struct CPU *cpu, uint8_t bit, uint8_t value)
+uint8_t set(struct CPU* cpu, uint8_t bit, uint8_t value)
 {
     return value | (1 << bit);
 }
@@ -2455,25 +2407,25 @@ uint8_t set(struct CPU *cpu, uint8_t bit, uint8_t value)
 EXECUTABLE_INSTRUCTION(set_register)
 {
     uint8_t value = cpu->registers->get_register_byte(cpu->registers, param->reg_1);
-    cpu->registers->set_register_byte(cpu->registers, param->reg_1, set(cpu, param->bit_position, value));
+    cpu->registers->set_register_byte(
+        cpu->registers, param->reg_1, set(cpu, param->bit_position, value));
 }
 
 EXECUTABLE_INSTRUCTION(set_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
-    uint8_t value = cpu->mmu->mmu_get_byte(cpu->mmu, address);
+    uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, set(cpu, param->bit_position, value));
 }
 
 // end of CB prefix functions
 
-uint8_t cpu_step_execute_main(struct CPU *cpu, uint8_t op_byte)
+uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte)
 {
     CPU_DEBUG_PRINT("Executing Op Code: 0x%02X\n", op_byte);
-    struct PackedInstructionParam *param = &cpu->instruction_table[op_byte];
+    struct PackedInstructionParam* param = &cpu->instruction_table[op_byte];
     param->fn(cpu, &param->param);
-    if (param->param.result_is_alternative)
-    {
+    if (param->param.result_is_alternative) {
         return param->cycles_alternative;
     }
     return cpu->opcode_cycle_main[op_byte];

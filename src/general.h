@@ -1,38 +1,39 @@
 #ifndef GAMEBOY_GENERAL_H
 #define GAMEBOY_GENERAL_H
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <string.h>
 #include <math.h>
+#include <string.h>
 
 #ifdef _WIN32
-#include <sys/timeb.h>
+#    include <sys/timeb.h>
 #else
-#include <sys/time.h>
+#    include <sys/time.h>
 #endif
 
-struct EmulatorConfig {
-    char* rom_path;
-    char* bootrom_path;
-    bool debug_mode;
-    int scale_factor;
+struct EmulatorConfig
+{
+    char*  rom_path;
+    char*  bootrom_path;
+    bool   debug_mode;
+    int    scale_factor;
     double start_time;
-    bool disable_color;
-    int verbose_level;
+    bool   disable_color;
+    int    verbose_level;
 };
 
 extern struct EmulatorConfig config;
 
 #define EMERGENCY_LEVEL -2
-#define ERROR_LEVEL -1
-#define WARN_LEVEL 0
-#define INFO_LEVEL 1
-#define DEBUG_LEVEL 2
-#define TRACE_LEVEL 3
+#define ERROR_LEVEL     -1
+#define WARN_LEVEL      0
+#define INFO_LEVEL      1
+#define DEBUG_LEVEL     2
+#define TRACE_LEVEL     3
 
 #define UNDEFINED 0xFF
 
@@ -67,37 +68,40 @@ extern struct EmulatorConfig config;
 #define ANSI_BG_WHITE   "\x1b[47m"
 
 // Text Styles
-#define ANSI_BOLD       "\x1b[1m"
-#define ANSI_UNDERLINE  "\x1b[4m"
-#define ANSI_BLINK      "\x1b[5m"
-#define ANSI_REVERSE    "\x1b[7m"
-#define ANSI_HIDDEN     "\x1b[8m"
+#define ANSI_BOLD      "\x1b[1m"
+#define ANSI_UNDERLINE "\x1b[4m"
+#define ANSI_BLINK     "\x1b[5m"
+#define ANSI_REVERSE   "\x1b[7m"
+#define ANSI_HIDDEN    "\x1b[8m"
 
 // Reset
 #define ANSI_COLOR_RESET "\x1b[0m"
 
 // Get time in seconds
-static inline double get_time_in_seconds() {
-	#ifdef _WIN32
-		struct timeb start_time;
-		ftime(&start_time);
-		return ((double)start_time.time * 1000.0 + (double)start_time.millitm) / 1000.0;
-	#else
-		struct timeval start_time;
-		gettimeofday(&start_time, NULL);
-		return ((double)start_time.tv_sec * 1000.0 + (double)start_time.tv_usec / 1000.0) / 1000.0;
-	#endif
+static inline double get_time_in_seconds()
+{
+#ifdef _WIN32
+    struct timeb start_time;
+    ftime(&start_time);
+    return ((double)start_time.time * 1000.0 + (double)start_time.millitm) / 1000.0;
+#else
+    struct timeval start_time;
+    gettimeofday(&start_time, NULL);
+    return ((double)start_time.tv_sec * 1000.0 + (double)start_time.tv_usec / 1000.0) / 1000.0;
+#endif
 }
 
 // Print time in seconds, with color
 // 6 digit for integer part, 3 digit for decimal part
 // 6 + 1 + 3 = 8
 // fill with space if less than 5 digit
-#define PRINT_TIME_IN_SECONDS() \
-    if (config.disable_color) { \
-        printf("[%010.3f] ", get_time_in_seconds() - config.start_time); \
-    } else { \
-        printf("[" ANSI_COLOR_BRIGHT_GREEN "%010.3f" ANSI_COLOR_RESET "] ", get_time_in_seconds() - config.start_time); \
+#define PRINT_TIME_IN_SECONDS()                                             \
+    if (config.disable_color) {                                             \
+        printf("[%010.3f] ", get_time_in_seconds() - config.start_time);    \
+    }                                                                       \
+    else {                                                                  \
+        printf("[" ANSI_COLOR_BRIGHT_GREEN "%010.3f" ANSI_COLOR_RESET "] ", \
+               get_time_in_seconds() - config.start_time);                  \
     }
 
 // 4 types of print level
@@ -105,35 +109,46 @@ static inline double get_time_in_seconds() {
 // Debug: green [DBG]
 // Trace: blue [TRC]
 // Warn: yellow [WRN]
-#define PRINT_LEVEL(level) \
-    if (config.disable_color) { \
-        if (level == INFO_LEVEL) { \
-            printf("[INF] "); \
-        } else if (level == DEBUG_LEVEL) { \
-            printf("[DBG] "); \
-        } else if (level == TRACE_LEVEL) { \
-            printf("[TRC] "); \
-        } else if (level == WARN_LEVEL) { \
-            printf("[WRN] "); \
-        } else if (level == EMERGENCY_LEVEL) { \
-            printf("[EMG] "); \
-        } else if (level == ERROR_LEVEL) { \
-            printf("[ERR] "); \
-        } \
-    } else { \
-        if (level == INFO_LEVEL) { \
-            printf(ANSI_COLOR_WHITE "[INF]" ANSI_COLOR_RESET " "); \
-        } else if (level == DEBUG_LEVEL) { \
-            printf(ANSI_COLOR_GREEN "[DBG]" ANSI_COLOR_RESET " "); \
-        } else if (level == TRACE_LEVEL) { \
-            printf(ANSI_COLOR_BLUE "[TRC]" ANSI_COLOR_RESET " "); \
-        } else if (level == WARN_LEVEL) { \
-            printf(ANSI_COLOR_YELLOW "[WRN]" ANSI_COLOR_RESET " "); \
-        } else if (level == EMERGENCY_LEVEL) { \
-            printf(ANSI_COLOR_RED "[EMG]" ANSI_COLOR_RESET " "); \
-        } else if (level == ERROR_LEVEL) { \
+#define PRINT_LEVEL(level)                                              \
+    if (config.disable_color) {                                         \
+        if (level == INFO_LEVEL) {                                      \
+            printf("[INF] ");                                           \
+        }                                                               \
+        else if (level == DEBUG_LEVEL) {                                \
+            printf("[DBG] ");                                           \
+        }                                                               \
+        else if (level == TRACE_LEVEL) {                                \
+            printf("[TRC] ");                                           \
+        }                                                               \
+        else if (level == WARN_LEVEL) {                                 \
+            printf("[WRN] ");                                           \
+        }                                                               \
+        else if (level == EMERGENCY_LEVEL) {                            \
+            printf("[EMG] ");                                           \
+        }                                                               \
+        else if (level == ERROR_LEVEL) {                                \
+            printf("[ERR] ");                                           \
+        }                                                               \
+    }                                                                   \
+    else {                                                              \
+        if (level == INFO_LEVEL) {                                      \
+            printf(ANSI_COLOR_WHITE "[INF]" ANSI_COLOR_RESET " ");      \
+        }                                                               \
+        else if (level == DEBUG_LEVEL) {                                \
+            printf(ANSI_COLOR_GREEN "[DBG]" ANSI_COLOR_RESET " ");      \
+        }                                                               \
+        else if (level == TRACE_LEVEL) {                                \
+            printf(ANSI_COLOR_BLUE "[TRC]" ANSI_COLOR_RESET " ");       \
+        }                                                               \
+        else if (level == WARN_LEVEL) {                                 \
+            printf(ANSI_COLOR_YELLOW "[WRN]" ANSI_COLOR_RESET " ");     \
+        }                                                               \
+        else if (level == EMERGENCY_LEVEL) {                            \
+            printf(ANSI_COLOR_RED "[EMG]" ANSI_COLOR_RESET " ");        \
+        }                                                               \
+        else if (level == ERROR_LEVEL) {                                \
             printf(ANSI_COLOR_BRIGHT_RED "[ERR]" ANSI_COLOR_RESET " "); \
-        } \
+        }                                                               \
     }
 
 #endif

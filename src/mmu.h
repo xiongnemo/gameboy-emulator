@@ -2,51 +2,47 @@
 #define GAMEBOY_MMU_H
 
 #include "cartridge.h"
+#include "general.h"
+#include "ppu.h"
 #include "ram.h"
 #include "timer.h"
-#include "ppu.h"
-#include "general.h"
 
 extern struct EmulatorConfig config;
 
 // MMU debug print
-#define MMU_DEBUG_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(DEBUG_LEVEL);                                 \
-        printf("MMU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define MMU_DEBUG_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= DEBUG_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(DEBUG_LEVEL);                                   \
+        printf("MMU: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define MMU_INFO_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(INFO_LEVEL);                                 \
-        printf("MMU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define MMU_INFO_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= INFO_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(INFO_LEVEL);                                   \
+        printf("MMU: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
-#define MMU_TRACE_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(TRACE_LEVEL);                                 \
-        printf("MMU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define MMU_TRACE_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= TRACE_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                    \
+        PRINT_LEVEL(TRACE_LEVEL);                                   \
+        printf("MMU: ");                                            \
+        printf(fmt, ##__VA_ARGS__);                                 \
     }
 
-#define MMU_WARN_PRINT(fmt, ...)                                 \
-    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) \
-    {                                                             \
-        PRINT_TIME_IN_SECONDS();                                  \
-        PRINT_LEVEL(WARN_LEVEL);                                 \
-        printf("MMU: ");                                          \
-        printf(fmt, ##__VA_ARGS__);                               \
+#define MMU_WARN_PRINT(fmt, ...)                                   \
+    if (config.debug_mode && config.verbose_level >= WARN_LEVEL) { \
+        PRINT_TIME_IN_SECONDS();                                   \
+        PRINT_LEVEL(WARN_LEVEL);                                   \
+        printf("MMU: ");                                           \
+        printf(fmt, ##__VA_ARGS__);                                \
     }
 
-#define MMU_ERROR_PRINT(fmt, ...) \
+#define MMU_ERROR_PRINT(fmt, ...)   \
     {                               \
         PRINT_TIME_IN_SECONDS();    \
         PRINT_LEVEL(ERROR_LEVEL);   \
@@ -55,11 +51,11 @@ extern struct EmulatorConfig config;
     }
 
 #define MMU_EMERGENCY_PRINT(fmt, ...) \
-    {                               \
-        PRINT_TIME_IN_SECONDS();    \
-        PRINT_LEVEL(EMERGENCY_LEVEL);   \
-        printf("MMU: ");            \
-        printf(fmt, ##__VA_ARGS__); \
+    {                                 \
+        PRINT_TIME_IN_SECONDS();      \
+        PRINT_LEVEL(EMERGENCY_LEVEL); \
+        printf("MMU: ");              \
+        printf(fmt, ##__VA_ARGS__);   \
     }
 
 // MMU struct
@@ -79,31 +75,31 @@ extern struct EmulatorConfig config;
 // 0xFFFF: Interrupt Enable Register
 struct MMU
 {
-    struct Cartridge *cartridge;
-    struct Ram *ram;
-    struct PPU *ppu;
+    struct Cartridge* cartridge;
+    struct Ram*       ram;
+    struct PPU*       ppu;
 
     // Public method pointers
-    uint8_t (*mmu_get_byte)(struct MMU *, uint16_t address);
-    void (*mmu_set_byte)(struct MMU *, uint16_t address, uint8_t byte);
-    uint16_t (*mmu_get_word)(struct MMU *, uint16_t address);
-    void (*mmu_set_word)(struct MMU *, uint16_t address, uint16_t word);
+    uint8_t (*mmu_get_byte)(struct MMU*, uint16_t address);
+    void (*mmu_set_byte)(struct MMU*, uint16_t address, uint8_t byte);
+    uint16_t (*mmu_get_word)(struct MMU*, uint16_t address);
+    void (*mmu_set_word)(struct MMU*, uint16_t address, uint16_t word);
 };
 
 // Function declarations
 
 // create mmu
 // cpu can not access vram directly, so a ppu is needed
-struct MMU* create_mmu(struct Cartridge *cartridge, struct Ram *ram, struct PPU *ppu);
+struct MMU* create_mmu(struct Cartridge* cartridge, struct Ram* ram, struct PPU* ppu);
 // free mmu
-void free_mmu(struct MMU *mmu);
+void free_mmu(struct MMU* mmu);
 // get byte
-uint8_t mmu_get_byte(struct MMU *mmu, uint16_t address);
+uint8_t mmu_get_byte(struct MMU* mmu, uint16_t address);
 // set byte
-void mmu_set_byte(struct MMU *mmu, uint16_t address, uint8_t byte);
+void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte);
 // get word
-uint16_t mmu_get_word(struct MMU *mmu, uint16_t address);
+uint16_t mmu_get_word(struct MMU* mmu, uint16_t address);
 // set word
-void mmu_set_word(struct MMU *mmu, uint16_t address, uint16_t word);
+void mmu_set_word(struct MMU* mmu, uint16_t address, uint16_t word);
 
 #endif
