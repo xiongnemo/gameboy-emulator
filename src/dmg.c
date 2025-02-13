@@ -180,9 +180,17 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    // bring up joypad
+    DMG_DEBUG_PRINT("Bringing up joypad...%s", "\n");
+    struct Joypad* joypad = create_joypad(mmu);
+    if (joypad == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create joypad\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Set up SDL with the configured scale factor
     DMG_DEBUG_PRINT("Creating form...%s", "\n");
-    struct Form* form = create_form();
+    struct Form* form = create_form(ppu, joypad);
     if (form == NULL) {
         DMG_EMERGENCY_PRINT("Failed to create form\n");
         exit(EXIT_FAILURE);

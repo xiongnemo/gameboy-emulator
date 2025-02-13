@@ -51,7 +51,11 @@ FORM_SRC=src/form.c
 FORM_HEADER=src/form.h
 FORM=$(FORM_SRC) $(FORM_HEADER)
 
-DMG=$(DMG_SRC) $(DMG_HEADER) $(MMU) $(TIMER) $(CPU) $(PPU) $(CARTRIDGE) $(RAM) $(VRAM) $(REGISTER) $(FORM)
+JOYPAD_SRC=src/joypad.c
+JOYPAD_HEADER=src/joypad.h
+JOYPAD=$(JOYPAD_SRC) $(JOYPAD_HEADER)
+
+DMG=$(DMG_SRC) $(DMG_HEADER) $(MMU) $(TIMER) $(CPU) $(PPU) $(CARTRIDGE) $(RAM) $(VRAM) $(REGISTER) $(FORM) $(JOYPAD)
 
 FORM_TEST=test/nemo-sdl-create-form
 RAM_TEST=test/ram-test
