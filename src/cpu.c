@@ -1207,7 +1207,7 @@ uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu)
 
 uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte)
 {
-    CPU_DEBUG_PRINT("Executing CB Op Code: 0xCB%02x\n", op_byte);
+    CPU_DEBUG_PRINT("Executing CB Op Code: 0xCB%02X\n", op_byte);
     struct PackedInstructionParam* param = &cpu->instruction_table_cb[op_byte];
     param->fn(cpu, &param->param);
     return cpu->opcode_cycle_prefix_cb[op_byte] + CB_PREFIX_CYCLES;
