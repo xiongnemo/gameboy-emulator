@@ -15,16 +15,23 @@
 #    include <sys/time.h>
 #endif
 
+struct EmulatorGlobals
+{
+    bool is_stdout_redirected;
+};
+
 struct EmulatorConfig
 {
-    char*  rom_path;
-    char*  bootrom_path;
-    bool   debug_mode;
-    int    scale_factor;
-    double start_time;
-    bool   disable_color;
-    int    verbose_level;
+    char*                   rom_path;
+    char*                   bootrom_path;
+    bool                    debug_mode;
+    int                     scale_factor;
+    double                  start_time;
+    bool                    disable_color;
+    int                     verbose_level;
+    struct EmulatorGlobals* globals;
 };
+
 
 extern struct EmulatorConfig config;
 
@@ -77,6 +84,23 @@ extern struct EmulatorConfig config;
 // Reset
 #define ANSI_COLOR_RESET "\x1b[0m"
 
+// are stdout redirected?
+#ifdef _WIN32
+#    include <io.h>
+#    define isatty _isatty
+#    ifndef STDOUT_FILENO
+#        define STDOUT_FILENO _fileno(stdout)
+#    endif
+#else
+#    include <unistd.h>
+#endif
+
+// Add this function
+static inline bool is_stdout_redirected()
+{
+    return !isatty(STDOUT_FILENO);
+}
+
 // Get time in seconds
 static inline double get_time_in_seconds()
 {
@@ -95,13 +119,16 @@ static inline double get_time_in_seconds()
 // 6 digit for integer part, 3 digit for decimal part
 // 6 + 1 + 3 = 8
 // fill with space if less than 5 digit
-#define PRINT_TIME_IN_SECONDS()                                             \
-    if (config.disable_color) {                                             \
-        printf("[%010.3f] ", get_time_in_seconds() - config.start_time);    \
-    }                                                                       \
-    else {                                                                  \
-        printf("[" ANSI_COLOR_BRIGHT_GREEN "%010.3f" ANSI_COLOR_RESET "] ", \
-               get_time_in_seconds() - config.start_time);                  \
+// if stdout is redirected, don't print color;
+// otherwise, use config.disable_color to decide whether to print color
+#define PRINT_TIME_IN_SECONDS()                                          \
+    if (config.globals->is_stdout_redirected || config.disable_color) { \
+        printf("[%014.3f] ", get_time_in_seconds() - config.start_time); \
+    }                                                                    \
+    else {                                                               \
+        printf(                                                          \
+            "[" ANSI_COLOR_BRIGHT_GREEN "%014.3f" ANSI_COLOR_RESET "] ", \
+            get_time_in_seconds() - config.start_time);                  \
     }
 
 // 4 types of print level
@@ -109,8 +136,10 @@ static inline double get_time_in_seconds()
 // Debug: green [DBG]
 // Trace: blue [TRC]
 // Warn: yellow [WRN]
+// if stdout is redirected, don't print color;
+// otherwise, use config.disable_color to decide whether to print color
 #define PRINT_LEVEL(level)                                              \
-    if (config.disable_color) {                                         \
+    if (config.globals->is_stdout_redirected || config.disable_color) { \
         if (level == INFO_LEVEL) {                                      \
             printf("[INF] ");                                           \
         }                                                               \

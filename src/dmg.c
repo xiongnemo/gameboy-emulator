@@ -16,23 +16,27 @@ void print_usage(const char* program_name)
     printf("  %s --scale 3 pokemon.gb\n", program_name);
 }
 
-struct EmulatorConfig config = {.rom_path      = NULL,
-                                .bootrom_path  = NULL,
-                                .debug_mode    = false,
-                                .scale_factor  = 2,
-                                .start_time    = 0.0,
-                                .disable_color = false,
-                                .verbose_level = 0};
+struct EmulatorConfig config = {
+    .rom_path      = NULL,
+    .bootrom_path  = NULL,
+    .debug_mode    = false,
+    .scale_factor  = 2,
+    .start_time    = 0.0,
+    .disable_color = false,
+    .verbose_level = 0,
+    .globals       = NULL};
 
 struct EmulatorConfig parse_args(int argc, char* argv[])
 {
-    struct EmulatorConfig config = {.rom_path      = NULL,
-                                    .bootrom_path  = NULL,
-                                    .debug_mode    = false,
-                                    .scale_factor  = 2,
-                                    .start_time    = 0.0,
-                                    .disable_color = false,
-                                    .verbose_level = 0};
+    struct EmulatorConfig config = {
+        .rom_path      = NULL,
+        .bootrom_path  = NULL,
+        .debug_mode    = false,
+        .scale_factor  = 2,
+        .start_time    = 0.0,
+        .disable_color = false,
+        .verbose_level = 0,
+        .globals       = NULL};
 
     if (argc < 2) {
         print_usage(argv[0]);
@@ -91,6 +95,12 @@ struct EmulatorConfig parse_args(int argc, char* argv[])
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
+
+    config.globals = (struct EmulatorGlobals*)malloc(sizeof(struct EmulatorGlobals));
+
+    config.globals->is_stdout_redirected = is_stdout_redirected();
+
+    DMG_DEBUG_PRINT("is_stdout_redirected: %d\n", config.globals->is_stdout_redirected);
 
     config.start_time = get_time_in_seconds();
 
