@@ -4,6 +4,7 @@ test/nemo*
 *.log
 .vscode/
 *.cc
+references/
 
 # Prerequisites
 *.d
