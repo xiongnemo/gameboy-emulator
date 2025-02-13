@@ -1,5 +1,6 @@
 SDL*
 test/nemo*
+test/*-test
 *.gb
 *.log
 .vscode/
