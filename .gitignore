@@ -6,6 +6,10 @@ test/*-test
 .vscode/
 *.cc
 references/
+# debug framebuffer bmp file
+*.bmp
+# LLM prompts
+GEMINI.md
 
 # Prerequisites
 *.d
