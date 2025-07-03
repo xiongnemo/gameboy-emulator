@@ -1,0 +1,23 @@
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Anzupop"
+      VALUE "FileDescription", "Gameboy Emulator"
+      VALUE "FileVersion", "0.0.1"
+      VALUE "InternalName", "gameboy-emulator"
+      VALUE "LegalCopyright", "Nemo Xiong"
+      VALUE "OriginalFilename", "dmg.exe"
+      VALUE "ProductName", "Anzupop Gameboy Emulator"
+      VALUE "ProductVersion", "0.0.1"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END
