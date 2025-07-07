@@ -8,7 +8,7 @@ test/cpu_instrs/
 *.cc
 references/
 # debug framebuffer bmp file
-*.bmp
+gameboy_framebuffer.bmp
 # LLM prompts
 GEMINI.md
 build/
