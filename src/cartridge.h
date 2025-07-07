@@ -83,6 +83,15 @@ struct Cartridge
     // +1 for null terminator
     uint8_t rom_name[ROM_NAME_SIZE + 1];
 
+    // Dynamic ROM data (for larger ROMs)
+    uint8_t* rom_data;
+    size_t   rom_size;
+
+    // Dynamic RAM data (for cartridge RAMs)
+    uint8_t* ram_data;
+    size_t   ram_size;
+    bool     ram_enabled;
+
     // alternative ROM bank id
     uint8_t rom_alternative_bank;
     // alternative RAM bank id
@@ -134,16 +143,16 @@ uint8_t cartridge_get_rom_bank(struct Cartridge* cartridge);
 uint8_t cartridge_get_ram_bank(struct Cartridge* cartridge);
 
 // get byte at address
-uint8_t cartridge_get_rom_byte(struct Cartridge* cartridge, uint16_t address);
+uint8_t cartridge_get_cartridge_byte(struct Cartridge* cartridge, uint16_t address);
 
 // set byte at address
-void cartridge_set_rom_byte(struct Cartridge* cartridge, uint16_t address, uint8_t byte);
+void cartridge_set_cartridge_byte(struct Cartridge* cartridge, uint16_t address, uint8_t byte);
 
 // get word at address
-uint16_t cartridge_get_rom_word(struct Cartridge* cartridge, uint16_t address);
+uint16_t cartridge_get_cartridge_word(struct Cartridge* cartridge, uint16_t address);
 
 // set word at address
-void cartridge_set_rom_word(struct Cartridge* cartridge, uint16_t address, uint16_t word);
+void cartridge_set_cartridge_word(struct Cartridge* cartridge, uint16_t address, uint16_t word);
 
 // check cartridge type
 bool check_cartridge_type(struct Cartridge* cartridge);

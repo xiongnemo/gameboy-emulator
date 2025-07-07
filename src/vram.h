@@ -3,7 +3,7 @@
 
 #include "general.h"
 
-#define VRAM_SIZE 65536   // 64KB Video RAM
+#define VRAM_SIZE 0x2000   // 8KB Video RAM (0x8000-0x9FFF)
 
 extern struct EmulatorConfig config;
 
@@ -62,10 +62,10 @@ struct Vram
     uint8_t vram_byte[VRAM_SIZE];
 
     // Method pointers
-    uint8_t (*get_vram_byte)(struct Vram*, uint16_t);
-    void (*set_vram_byte)(struct Vram*, uint16_t, uint8_t);
-    uint16_t (*get_vram_word)(struct Vram*, uint16_t);
-    void (*set_vram_word)(struct Vram*, uint16_t, uint16_t);
+    uint8_t (*vram_get_byte)(struct Vram*, uint16_t);
+    void (*vram_set_byte)(struct Vram*, uint16_t, uint8_t);
+    uint16_t (*vram_get_word)(struct Vram*, uint16_t);
+    void (*vram_set_word)(struct Vram*, uint16_t, uint16_t);
 };
 
 // Function declarations

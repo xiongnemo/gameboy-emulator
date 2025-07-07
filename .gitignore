@@ -1,6 +1,7 @@
 SDL*
 test/nemo*
 test/*-test
+test/cpu_instrs/
 *.gb
 *.log
 .vscode/

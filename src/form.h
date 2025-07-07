@@ -2,6 +2,8 @@
 #define GAMEBOY_FORM_H
 
 #include "general.h"
+#include "joypad.h"
+#include "ppu.h"
 #include <SDL3/SDL.h>
 
 extern struct EmulatorConfig config;
@@ -61,13 +63,42 @@ struct Form
     SDL_Window*   window;
     SDL_Renderer* renderer;
     SDL_Surface*  surface;
+    SDL_Event*    event;
 
     // framebuffer
     uint8_t* framebuffer;
+
+    // PPU
+    struct PPU* ppu;
+
+    // Joypad
+    struct Joypad* joypad;
+
+    // method pointers
+    void (*update_surface)(struct Form*);
+    bool (*get_joypad_state)(struct Form*);
 };
 
 // Function declarations
-struct Form* create_form(void);
-void         free_form(struct Form* form);
+
+// Form functions
+
+// Create form
+struct Form* create_form(struct PPU* ppu, struct Joypad* joypad, char* rom_name);
+
+// Free form
+void free_form(struct Form* form);
+
+// Update surface
+void update_surface(struct Form* form);
+
+// Get Joypad state
+bool get_joypad_state(struct Form* form);
+
+// Dump framebuffer to BMP file
+void dump_framebuffer_to_bmp(struct Form* form, const char* filename);
+
+// Get current window display mode
+const SDL_DisplayMode* get_current_window_display_mode(struct Form* form);
 
 #endif

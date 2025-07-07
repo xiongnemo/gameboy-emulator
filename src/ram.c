@@ -2,6 +2,10 @@
 
 uint8_t ram_get_byte(struct Ram* self, uint16_t address)
 {
+    // Handle Echo RAM
+    if (address >= 0xE000 && address <= 0xFDFF) {
+        address -= 0x2000; // Redirect to 0xC000-0xDFFF
+    }
     RAM_TRACE_PRINT(
         "RAM_GET_BYTE: address: 0x%02x, value: 0x%02x\n", address, self->ram_byte[address]);
     return self->ram_byte[address];
@@ -9,6 +13,10 @@ uint8_t ram_get_byte(struct Ram* self, uint16_t address)
 
 void ram_set_byte(struct Ram* self, uint16_t address, uint8_t byte)
 {
+    // Handle Echo RAM
+    if (address >= 0xE000 && address <= 0xFDFF) {
+        address -= 0x2000; // Redirect to 0xC000-0xDFFF
+    }
     self->ram_byte[address] = byte;
     RAM_TRACE_PRINT("RAM_SET_BYTE: address: 0x%02x, value: 0x%02x\n", address, byte);
 }
@@ -32,10 +40,6 @@ void ram_set_word(struct Ram* self, uint16_t address, uint16_t word)
 struct Ram* create_ram(void)
 {
     struct Ram* mem   = (struct Ram*)malloc(sizeof(struct Ram));
-    mem->get_ram_byte = ram_get_byte;
-    mem->set_ram_byte = ram_set_byte;
-    mem->get_ram_word = ram_get_word;
-    mem->set_ram_word = ram_set_word;
     // Initialize ram array to 0
     RAM_TRACE_PRINT("RAM_CREATE: Initializing ram array to 0%s", "\n");
     memset(mem->ram_byte, 0, sizeof(mem->ram_byte));

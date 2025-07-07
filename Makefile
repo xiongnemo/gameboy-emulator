@@ -3,7 +3,7 @@
 CC=gcc
 
 # Build directory
-BUILD_DIR=build
+BUILD_DIR=build_tmp
 
 # SDL3 specific flags
 SDL_INCLUDE_FLAGS=-ISDL3/include/
@@ -76,6 +76,8 @@ RAM_TEST=test/ram-test
 CARTRIDGE_TEST=test/cartridge-test
 REGISTER_TEST=test/register-test
 CPU_TEST=test/cpu-test
+
+build: all
 
 # Create build directory
 $(BUILD_DIR):
@@ -158,8 +160,11 @@ default: all
 all: $(DMG_OBJS)
 	$(CC) $(DMG_OBJS) -o dmg $(SDL_LINK_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-all-cpu-test: all
-	./dmg test/cpu.gb -d -vv
+all-cpu-test: debug
+	./dmg test/cpu.gb --serial
+
+all-cpu-test-verbose: debug
+	./dmg test/cpu.gb -d -vv --serial
 
 windows-release: $(DMG_OBJS)
 	$(CC) $(DMG_OBJS) -o dmg $(SDL_LINK_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS) $(RC_FLAGS)

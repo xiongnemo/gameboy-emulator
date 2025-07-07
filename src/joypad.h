@@ -4,9 +4,6 @@
 #include "general.h"
 #include "mmu.h"
 
-#define JOYPAD_ADDRESS 0xFF00
-#define IF_ADDRESS 0xFF0F
-
 extern struct EmulatorConfig config;
 
 // Joypad debug print
@@ -35,15 +32,10 @@ extern struct EmulatorConfig config;
     }
 
 struct Joypad {
-    uint8_t key_column;
-    bool column_direction;
-    bool column_controls;
-    
-    // Default to 0b0000_1111 for direction keys
+    // Default to 0b0000_1111 for direction keys (1=not pressed, 0=pressed)
     uint8_t keys_directions;
-    // Default to 0b0000_1111 for control keys  
+    // Default to 0b0000_1111 for control keys (1=not pressed, 0=pressed)
     uint8_t keys_controls;
-    uint8_t temp_ff00;
     
     uint8_t save_flag;
     uint8_t load_flag;
@@ -56,20 +48,12 @@ struct Joypad {
     struct MMU* mmu;
 
     // Method pointers
-    void (*joypad_interrupts)(struct Joypad*);
-    void (*write_result)(struct Joypad*);
-    void (*reset_joypad)(struct Joypad*);
+    void (*handle_joypad_input)(struct Joypad*);
 };
 
 // Joypad functions
 // Joypad interrupts
-void joypad_interrupts(struct Joypad* joypad);
-
-// Write result
-void write_result(struct Joypad* joypad);
-
-// Reset joypad
-void reset_joypad(struct Joypad* joypad);
+void handle_joypad_input(struct Joypad* joypad);
 
 // Create joypad
 struct Joypad* create_joypad(struct MMU* mmu);

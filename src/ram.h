@@ -55,7 +55,7 @@ extern struct EmulatorConfig config;
         printf(fmt, ##__VA_ARGS__);   \
     }
 
-#define RAM_SIZE 65536   // 64KB RAM
+#define RAM_SIZE 0xFFFF   // 64KB RAM
 
 // list of important ram register addresses
 

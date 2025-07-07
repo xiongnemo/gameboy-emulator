@@ -3,6 +3,7 @@
 
 #include "cartridge.h"
 #include "general.h"
+#include "joypad.h"
 #include "ppu.h"
 #include "ram.h"
 #include "timer.h"
@@ -78,12 +79,14 @@ struct MMU
     struct Cartridge* cartridge;
     struct Ram*       ram;
     struct PPU*       ppu;
+    struct Joypad*    joypad;
 
     // Public method pointers
     uint8_t (*mmu_get_byte)(struct MMU*, uint16_t address);
     void (*mmu_set_byte)(struct MMU*, uint16_t address, uint8_t byte);
     uint16_t (*mmu_get_word)(struct MMU*, uint16_t address);
     void (*mmu_set_word)(struct MMU*, uint16_t address, uint16_t word);
+    void (*mmu_attach_joypad)(struct MMU* mmu, struct Joypad* joypad);
 };
 
 // Function declarations
@@ -101,5 +104,9 @@ void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte);
 uint16_t mmu_get_word(struct MMU* mmu, uint16_t address);
 // set word
 void mmu_set_word(struct MMU* mmu, uint16_t address, uint16_t word);
+// DMA
+void DMA(struct MMU* mmu, uint8_t source_bank);
+// Attach joypad
+void mmu_attach_joypad(struct MMU* mmu, struct Joypad* joypad);
 
 #endif

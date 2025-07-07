@@ -59,18 +59,9 @@ extern struct EmulatorConfig config;
 // CPU clock speed: 4.194304 MHz
 #define CPU_CLOCK_SPEED 4194304
 
-// Interrupt flags
-#define INT_VBLANK   0x01
-#define INT_LCD_STAT 0x02
-#define INT_TIMER    0x04
-#define INT_SERIAL   0x08
-#define INT_JOYPAD   0x10
-
 // CB Prefix
 #define CB_PREFIX        0xCB
 #define CB_PREFIX_CYCLES 1
-
-#define ZERO_PAGE_ADDRESS 0xFF00
 
 // FF0F - IF - Interrupt Flag (R/W)
 // Bit 0: V-Blank  Interrupt Request (INT 40h)  (1=Request)
@@ -78,7 +69,7 @@ extern struct EmulatorConfig config;
 // Bit 2: Timer    Interrupt Request (INT 50h)  (1=Request)
 // Bit 3: Serial   Interrupt Request (INT 58h)  (1=Request)
 // Bit 4: Joypad   Interrupt Request (INT 60h)  (1=Request)
-#define INTERRUPT_FLAG_ADDRESS 0xFF00
+#define INTERRUPT_FLAG_ADDRESS 0xFF0F
 
 // FFFF - IE - Interrupt Enable (R/W)
 // Bit 0: V-Blank  Interrupt Enable  (INT 40h)  (1=Enable)
@@ -154,6 +145,12 @@ struct CPU
     // Memory Management Unit
     struct MMU* mmu;
 
+    // Timer
+    struct Timer* timer;
+
+    // serial output
+    bool serial_output;
+
     // CPU state
     bool halted;                    // CPU is halted
     bool stopped;                   // CPU is stopped
@@ -172,6 +169,8 @@ struct CPU
     const uint8_t* opcode_cycle_prefix_cb;
 
     // Public method pointers
+    void (*cpu_attach_timer)(struct CPU* cpu, struct Timer* timer);
+    uint8_t (*cpu_step_for_cycles)(struct CPU* cpu, uint8_t cycles);   // Step for given number of cycles
     uint8_t (*cpu_step_next)(struct CPU*);   // Step next instruction (or interrupt)
 
     // instruction table (function pointers), 256 entries
@@ -241,7 +240,13 @@ typedef uint8_t (*cpu_instruction_fn)(struct CPU* cpu, ...);
 struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu);
 void        free_cpu(struct CPU* cpu);
 
-// Step next instruction (or interrupt), called by main loop
+// Attach timer
+void cpu_attach_timer(struct CPU* cpu, struct Timer* timer);
+
+// Step for given number of cycles
+void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles);
+
+// Step next instruction (or interrupt)
 uint8_t cpu_step_next(struct CPU* cpu);
 
 // Execute one instruction
@@ -259,8 +264,8 @@ uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte);
 // Execute Main Op Code
 uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte);
 
-// Execute instruction
-uint8_t cpu_step_execute_instruction(struct CPU* cpu, uint8_t (*instruction)(struct CPU*));
+// Set serial output
+void cpu_set_serial_output(struct CPU* cpu, bool serial_output);
 
 // Read byte from MMU
 uint8_t cpu_step_read_byte(struct CPU* cpu);
@@ -268,14 +273,7 @@ uint8_t cpu_step_read_byte(struct CPU* cpu);
 // Read word from MMU
 uint16_t cpu_step_read_word(struct CPU* cpu);
 
-// Interrupt Master Enable flag
-bool cpu_get_interrupt_master_enable(struct CPU* cpu);
-
-// Set Interrupt Master Enable flag
-void cpu_set_interrupt_master_enable(struct CPU* cpu, bool enable);
-
 // instruction methods
-
 #define EXECUTABLE_INSTRUCTION(fn_name) \
     void fn_name(struct CPU* cpu, struct InstructionParam* param)
 
@@ -555,7 +553,7 @@ void add_hl(struct CPU* cpu, uint16_t* value);
 
 // ADD HL, rr
 // add register pair to HL
-EXECUTABLE_INSTRUCTION(add_hl_to_register_pair);
+EXECUTABLE_INSTRUCTION(add_register_pair_to_hl);
 
 // ADD HL, SP
 // add SP to HL
@@ -615,7 +613,7 @@ EXECUTABLE_INSTRUCTION(swap_address_hl);
 // decimal adjust register A
 // Flags:
 // Z: Set if result is zero
-// N: Reset
+// N: Not affected
 // H: Reset
 // C: Set if carry from bit 7 to bit 8
 EXECUTABLE_INSTRUCTION(daa);
@@ -662,13 +660,18 @@ EXECUTABLE_INSTRUCTION(halt);
 EXECUTABLE_INSTRUCTION(stop);
 
 // DI
-// Disable interrupts but not immediate
-// Interrupt will be disabled after the current instruction (after DI is executed)
+// This instruction disables interrupts but not
+// immediately. Interrupts are disabled after
+// instruction after DI is executed.
+// Disables interrupt handling by setting IME=0
+// and cancelling any scheduled effects of the EI
+// instruction if any
 EXECUTABLE_INSTRUCTION(di);
 
 // EI
-// Enable interrupts but not immediate
-// Interrupt will be enabled after the current instruction (after EI is executed)
+// Enable interrupts. This intruction enables interrupts
+// but not immediately. Interrupts are enabled after
+// instruction after EI is executed.
 EXECUTABLE_INSTRUCTION(ei);
 
 // 8-bit Rotate and Shift instructions
@@ -823,7 +826,7 @@ EXECUTABLE_INSTRUCTION(srl_address_hl);
 // N: Reset
 // H: Set
 // C: Not affected
-uint8_t bit(struct CPU* cpu, uint8_t bit, uint8_t value);
+void bit(struct CPU* cpu, uint8_t bit, uint8_t value);
 
 // BIT b, r
 EXECUTABLE_INSTRUCTION(bit_register);
@@ -904,8 +907,8 @@ EXECUTABLE_INSTRUCTION(call_cc_imm);
 // RST n
 // jump to address n
 // they are hard-coded in the instruction set
-// 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38
-void rst(struct CPU* cpu, uint8_t n);
+// 0x0000, 0x0008, 0x0010, 0x0018, 0x0020, 0x0028, 0x0030, 0x0038
+void rst(struct CPU* cpu, uint16_t n);
 
 // 0x00
 EXECUTABLE_INSTRUCTION(rst_00h);

@@ -55,12 +55,6 @@ extern struct EmulatorConfig config;
         printf(fmt, ##__VA_ARGS__);     \
     }
 
-#define IF_ADDRESS         0xFF0F
-#define TIMER_DIV_ADDRESS  0xFF04
-#define TIMER_TIMA_ADDRESS 0xFF05
-#define TIMER_TMA_ADDRESS  0xFF06
-#define TIMER_TAC_ADDRESS  0xFF07
-
 struct Timer
 {
     // Data members
@@ -72,16 +66,20 @@ struct Timer
     uint8_t  reg_tac;    // control ff07
 
     // Method pointers
-    void (*add_time)(struct Timer*, uint8_t, struct Ram*);
-    void (*refresh_timer_register)(struct Timer*, struct Ram*);
-    void (*set_timer_register)(struct Timer*, struct Ram*);
+    void (*add_time)(struct Timer*, uint8_t);
+    void (*refresh_timer_register)(struct Timer*);
+    void (*set_timer_register)(struct Timer*);
+
+    // RAM
+    struct Ram* ram;
 };
 
 // Function declarations
-void          timer_add_time(struct Timer* self, uint8_t cycle, struct Ram* mem);
-void          timer_refresh_register(struct Timer* self, struct Ram* mem);
-void          timer_set_register(struct Timer* self, struct Ram* mem);
+void          timer_add_time(struct Timer* self, uint8_t cycle);
+void          timer_refresh_register(struct Timer* self);
+void          timer_set_register(struct Timer* self);
 struct Timer* create_timer(void);
 void          free_timer(struct Timer* timer);
+void          timer_attach_ram(struct Timer* self, struct Ram* ram);
 
 #endif

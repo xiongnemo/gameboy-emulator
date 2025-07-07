@@ -28,7 +28,6 @@ static int test_counter = 0;
 #define DELETE_ALL_COMPONENTS                     \
     CPU_INFO_PRINT("cleaning up cpu: %p\n", cpu); \
     free_cpu(cpu);                                \
-    \ 
     test_counter++;                               \
     CPU_INFO_PRINT("test %d completed\n", test_counter);
 
@@ -1067,13 +1066,13 @@ void test_opcode_d9()
     CREATE_ALL_COMPONENTS
 
     cpu->mmu->mmu_set_word(cpu->mmu, TEST_SP, 0xC200);
-    cpu_set_interrupt_master_enable(cpu, true);
+    cpu->interrupt_master_enable = false;
 
     cpu->mmu->mmu_set_byte(cpu->mmu, TEST_PC, 0xD9);
     cpu->cpu_step_next(cpu);
 
     assert(cpu->registers->get_control_register(cpu->registers, PC) == 0xC200);
-    assert(cpu_get_interrupt_master_enable(cpu) == true);
+    assert(cpu->interrupt_master_enable == true);
 
     DELETE_ALL_COMPONENTS
 }
@@ -1282,17 +1281,17 @@ void test_opcode_f1()
     CREATE_ALL_COMPONENTS
 
     cpu->registers->set_control_register(cpu->registers, SP, 0xC100);
-    cpu->mmu->mmu_set_word(cpu->mmu, 0xC100, 0x1230);
+    cpu->mmu->mmu_set_word(cpu->mmu, 0xC100, 0x1232);
 
     cpu->mmu->mmu_set_byte(cpu->mmu, TEST_PC, 0xF1);
     cpu->cpu_step_next(cpu);
 
-    assert(cpu->registers->get_register_pair(cpu->registers, AF) == 0x12f0); // Lower nibble of F is always 0, under this instruction higher nibble is always 1
+    assert(cpu->registers->get_register_pair(cpu->registers, AF) == 0x1230); // Lower nibble of F is always 0, under this instruction higher nibble is always 1
     assert(cpu->registers->get_control_register(cpu->registers, SP) == 0xC102);
 
-    // check all flags are set
-    assert(cpu->registers->get_flag(cpu->registers, Flag_Z) == true);
-    assert(cpu->registers->get_flag(cpu->registers, Flag_N) == true);
+    // check all flags as  0x03 - 0b0000_0011
+    assert(cpu->registers->get_flag(cpu->registers, Flag_Z) == false);
+    assert(cpu->registers->get_flag(cpu->registers, Flag_N) == false);
     assert(cpu->registers->get_flag(cpu->registers, Flag_H) == true);
     assert(cpu->registers->get_flag(cpu->registers, Flag_C) == true);
 

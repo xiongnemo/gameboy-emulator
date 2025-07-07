@@ -21,7 +21,7 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0x08: LD (a16), SP
     {ld_sp_to_address_imm, {}},
     // 0x09: ADD HL, BC
-    {add_hl_to_register_pair, {.rp_1 = BC}},
+    {add_register_pair_to_hl, {.rp_1 = BC}},
     // 0x0A: LD A, (BC)
     {ld_address_register_pair_to_register, {.reg_1 = A, .rp_1 = BC}},
     // 0x0B: DEC BC
@@ -54,7 +54,7 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0x18: JR r8
     {jr_imm, {}},
     // 0x19: ADD HL, DE
-    {add_hl_to_register_pair, {.rp_1 = DE}},
+    {add_register_pair_to_hl, {.rp_1 = DE}},
     // 0x1A: LD A, (DE)
     {ld_address_register_pair_to_register, {.reg_1 = A, .rp_1 = DE}},
     // 0x1B: DEC DE
@@ -87,9 +87,9 @@ struct PackedInstructionParam instruction_table[256] = {
     // 0x28: JR Z, r8
     {jr_cc_imm, {.cc = JumpCondition_Z}, .cycles_alternative = 3},
     // 0x29: ADD HL, HL
-    {add_hl_to_register_pair, {.rp_1 = HL}},
+    {add_register_pair_to_hl, {.rp_1 = HL}},
     // 0x2A: LD A, (HL+)
-    {ld_a_to_address_hl_inc_hl, {}},
+    {ld_address_hl_to_a_inc_hl, {}},
     // 0x2B: DEC HL
     {dec_register_pair, {.rp_1 = HL}},
     // 0x2C: INC L
@@ -864,7 +864,7 @@ struct PackedInstructionParam instruction_table_cb[256] = {
     // 0x9B: RES 3, E
     {res_register,    {.reg_1 = E, .bit_position = 3}},
     // 0x9C: RES 3, H
-    {res_register,    {.reg_1 = L, .bit_position = 3}},
+    {res_register,    {.reg_1 = H, .bit_position = 3}},
     // 0x9D: RES 3, L
     {res_register,    {.reg_1 = L, .bit_position = 3}},
     // 0x9E: RES 3, (HL)
@@ -1073,9 +1073,15 @@ struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
     cpu->instruction_table_cb = instruction_table_cb;
 
     // set interrupt vector table
-    cpu->interrupt_vector_table = interrupt_vector_table;
+    cpu->interrupt_vector_table = (uint16_t*)interrupt_vector_table;
 
     return cpu;
+}
+
+void cpu_set_serial_output(struct CPU* cpu, bool serial_output)
+{
+    CPU_DEBUG_PRINT("Serial output enabled: %d\n", serial_output);
+    cpu->serial_output = serial_output;
 }
 
 void free_cpu(struct CPU* cpu)
@@ -1092,43 +1098,49 @@ void free_cpu(struct CPU* cpu)
 // Private: Handle interrupts
 uint8_t handle_interrupts(struct CPU* cpu)
 {
+    // Get interrupt flag and enable registers
+    uint8_t interrupt_flag    = cpu->mmu->mmu_get_byte(cpu->mmu, INTERRUPT_FLAG_ADDRESS);
+    uint8_t interrupt_enable  = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFFFF);
+    uint8_t interrupt_enabled = interrupt_flag & interrupt_enable;
+
+    // No interrupts pending
+    if (!interrupt_enabled) {
+        return 0;
+    }
+
+    // If halted, wake up regardless of IME state
+    if (cpu->halted) {
+        cpu->halted = false;
+        // If IME is disabled, wake up but don't service interrupt
+        if (!cpu->interrupt_master_enable) {
+            return 4;   // Wake up from HALT takes 4 cycles
+        }
+    }
+
     // Check if interrupt master enable is disabled
     if (!cpu->interrupt_master_enable) {
         return 0;
     }
 
-    // hard wire interrupt flag and interrupt enable from mmu
-    uint8_t interrupt_flag   = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF0F);
-    uint8_t interrupt_enable = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFFFF);
-
-    // enable interrupt if interrupt flag is set and interrupt enable is set
-    uint8_t interrupt_enabled = interrupt_flag & interrupt_enable;
-
-    if (!interrupt_enabled) {
-        return 0;
-    }
-
-    // interrupt happening now!!
-    // disbale halting
-    cpu->halted = false;
-    // disable further interrupt
+    // Service the interrupt
+    // disable further interrupts
     cpu->interrupt_master_enable = false;
 
-    // handle interrupt by priority
-    // from highest (Bit 0) to lowest (Bit 4)
-    // Bit 0: V-Blank
-    // Bit 1: LCDC STAT
-    // Bit 2: Timer Overflow
-    // Bit 3: Serial I/O Transfer Completion
-    // Bit 4: Joypad (Transition from high to low of pin number P10 - P13)
-    // get trailing bits
-    // method 1 (Intel?)
-    // #ifdef __BMI__
-    // uint8_t interrupt_bit = _tzcnt_u16(interrupt_enabled);
-    // #else
-    // // method 2:
+// handle interrupt by priority
+// from highest (Bit 0) to lowest (Bit 4)
+// Bit 0: V-Blank
+// Bit 1: LCDC STAT
+// Bit 2: Timer Overflow
+// Bit 3: Serial I/O Transfer Completion
+// Bit 4: Joypad (Transition from high to low of pin number P10 - P13)
+// get trailing bits
+// method 1 (Intel?)
+#ifdef __BMI__
+    uint8_t interrupt_bit = _tzcnt_u16(interrupt_enabled);
+#else
+    // method 2:
     uint8_t interrupt_bit = __builtin_ctz(interrupt_enabled);
-    // #endif
+#endif
 
     // set that bit to 0 in interrupt flag
     cpu->mmu->mmu_set_byte(
@@ -1138,27 +1150,52 @@ uint8_t handle_interrupts(struct CPU* cpu)
     uint16_t interrupt_address = cpu->interrupt_vector_table[interrupt_bit];
 
     // push pc to stack
-    uint16_t old_pc = cpu->registers->get_register_pair(cpu->registers, PC);
+    uint16_t old_pc = cpu->registers->get_control_register(cpu->registers, PC);
     uint16_t old_sp = cpu->registers->get_control_register(cpu->registers, SP);
-    cpu->mmu->mmu_set_word(cpu->mmu, old_sp, old_pc);
-    cpu->registers->set_control_register(cpu->registers, SP, old_sp - 2);
+    uint16_t new_sp = old_sp - 2;   // Decrement SP first
+    cpu->mmu->mmu_set_word(cpu->mmu, new_sp, old_pc);
+    cpu->registers->set_control_register(cpu->registers, SP, new_sp);
 
     // jump to interrupt address
-    cpu->registers->set_register_pair(cpu->registers, PC, interrupt_address);
+    cpu->registers->set_control_register(cpu->registers, PC, interrupt_address);
     return 4;
 }
 
+void cpu_attach_timer(struct CPU* cpu, struct Timer* timer)
+{
+    cpu->timer = timer;
+}
+
+void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles)
+{
+    while (cycles > 0) {
+        uint8_t cycles_to_step = cpu_step_next(cpu);
+        cycles -= cycles_to_step;
+        cpu->timer->add_time(cpu->timer, cycles_to_step);
+    }
+    return;
+}
 uint8_t cpu_step_next(struct CPU* cpu)
 {
-    // 1. Check interrupts
-    uint8_t interrupt_handled = handle_interrupts(cpu);
-    if (interrupt_handled) {
-        return interrupt_handled;
+    // 0. serial output
+    if (cpu->serial_output) {
+        if (cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF02) == 0x81) {
+            char c = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF01);
+            printf("%c", c);
+            cpu->mmu->mmu_set_byte(cpu->mmu, 0xFF02, 0x0);
+        }
     }
+    // 1. Check interrupts
+    uint8_t interrupt_cycles = handle_interrupts(cpu);
+    if (interrupt_cycles) {
+        return interrupt_cycles;
+    }
+
     // 2. halted?
     if (cpu->halted) {
         return 1;
     }
+
     // 3. step next instruction
     return cpu_step(cpu);
 }
@@ -1166,18 +1203,22 @@ uint8_t cpu_step_next(struct CPU* cpu)
 uint8_t cpu_step_read_byte(struct CPU* cpu)
 {
     // 1. Get byte from MMU
+    CPU_TRACE_PRINT("Reading byte from address: 0x%04X\n", *(cpu->registers->pc));
     uint8_t byte = cpu->mmu->mmu_get_byte(cpu->mmu, *(cpu->registers->pc));
     // 2. Increment PC
     *(cpu->registers->pc) += 1;
+    CPU_TRACE_PRINT("Read byte: 0x%02X, PC is now 0x%04X\n", byte, *(cpu->registers->pc));
     return byte;
 }
 
 uint16_t cpu_step_read_word(struct CPU* cpu)
 {
     // 1. Get word from MMU
+    CPU_TRACE_PRINT("Reading word from address: 0x%04X\n", *(cpu->registers->pc));
     uint16_t word = cpu->mmu->mmu_get_word(cpu->mmu, *(cpu->registers->pc));
     // 2. Increment PC
     *(cpu->registers->pc) += 2;
+    CPU_TRACE_PRINT("Read word: 0x%04X, PC is now 0x%04X\n", word, *(cpu->registers->pc));
     return word;
 }
 
@@ -1185,9 +1226,11 @@ uint8_t cpu_step(struct CPU* cpu)
 {
     // 1. Get Op Byte
     cpu->op_code = cpu_step_read_byte(cpu);
+
     // 2. Execute Op Code
     return cpu_step_execute_op_code(cpu, cpu->op_code);
 }
+
 
 uint8_t cpu_step_execute_op_code(struct CPU* cpu, uint8_t op_byte)
 {
@@ -1195,6 +1238,17 @@ uint8_t cpu_step_execute_op_code(struct CPU* cpu, uint8_t op_byte)
         return cpu_step_execute_prefix_cb(cpu);
     }
     return cpu_step_execute_main(cpu, op_byte);
+}
+
+uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte)
+{
+    CPU_TRACE_PRINT("Executing Op Code: 0x%02X\n", op_byte);
+    struct PackedInstructionParam* param = &cpu->instruction_table[op_byte];
+    param->fn(cpu, &param->param);
+    if (param->param.result_is_alternative) {
+        return param->cycles_alternative;
+    }
+    return cpu->opcode_cycle_main[op_byte];
 }
 
 uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu)
@@ -1207,22 +1261,10 @@ uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu)
 
 uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte)
 {
-    CPU_DEBUG_PRINT("Executing CB Op Code: 0xCB%02X\n", op_byte);
+    CPU_TRACE_PRINT("Executing CB Op Code: 0xCB%02X\n", op_byte);
     struct PackedInstructionParam* param = &cpu->instruction_table_cb[op_byte];
     param->fn(cpu, &param->param);
     return cpu->opcode_cycle_prefix_cb[op_byte] + CB_PREFIX_CYCLES;
-}
-
-// Interrupt Master Enable flag
-bool cpu_get_interrupt_master_enable(struct CPU* cpu)
-{
-    return cpu->interrupt_master_enable;
-}
-
-// Set Interrupt Master Enable flag
-void cpu_set_interrupt_master_enable(struct CPU* cpu, bool enable)
-{
-    cpu->interrupt_master_enable = enable;
 }
 
 EXECUTABLE_INSTRUCTION(cpu_invalid_opcode)
@@ -1233,7 +1275,7 @@ EXECUTABLE_INSTRUCTION(cpu_invalid_opcode)
 
 EXECUTABLE_INSTRUCTION(nop)
 {
-    CPU_DEBUG_PRINT("NOP\n");
+    CPU_TRACE_PRINT("NOP\n");
 }
 
 EXECUTABLE_INSTRUCTION(ld_imm_to_register_pair)
@@ -1251,10 +1293,6 @@ EXECUTABLE_INSTRUCTION(ld_register_to_address_register_pair)
     uint8_t  value       = cpu->registers->get_register_byte(cpu->registers, from_register);
     cpu->mmu->mmu_set_byte(cpu->mmu, mmu_address, value);
 }
-
-// below are cursor generated functions
-
-// First, let's add the 8-bit load instructions:
 
 EXECUTABLE_INSTRUCTION(ld_imm_to_register)
 {
@@ -1324,15 +1362,11 @@ EXECUTABLE_INSTRUCTION(pop_register_pair)
     enum RegisterPair register_pair = param->rp_1;
     uint16_t          sp            = cpu->registers->get_control_register(cpu->registers, SP);
     uint16_t          value         = cpu->mmu->mmu_get_word(cpu->mmu, sp);
+    if (register_pair == AF) {
+        value &= 0xFFF0;   // Lower 4 bits of F register are always zero
+    }
     cpu->registers->set_register_pair(cpu->registers, register_pair, value);
     cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
-    if (register_pair == AF) {
-        // set all flags to true
-        cpu->registers->set_flag_z(cpu->registers, true);
-        cpu->registers->set_flag_n(cpu->registers, true);
-        cpu->registers->set_flag_h(cpu->registers, true);
-        cpu->registers->set_flag_c(cpu->registers, true);
-    }
 }
 
 // 8-bit arithmetic instructions:
@@ -1347,7 +1381,7 @@ EXECUTABLE_INSTRUCTION(add_register_to_a)
     // Set flags
     cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (a & 0xF) + (value & 0xF) > 0xF);
+    cpu->registers->set_flag_h(cpu->registers, (a & 0x0F) + (value & 0x0F) > 0x0F);
     cpu->registers->set_flag_c(cpu->registers, result > 0xFF);
 
     cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
@@ -1362,7 +1396,7 @@ EXECUTABLE_INSTRUCTION(add_imm_to_a)
     // Set flags
     cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (a & 0xF) + (value & 0xF) > 0xF);
+    cpu->registers->set_flag_h(cpu->registers, (a & 0x0F) + (value & 0x0F) > 0x0F);
     cpu->registers->set_flag_c(cpu->registers, result > 0xFF);
 
     cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
@@ -1378,7 +1412,7 @@ void adc_a(struct CPU* cpu, uint8_t* value)
 
     cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (a & 0xF) + (*value & 0xF) + carry > 0xF);
+    cpu->registers->set_flag_h(cpu->registers, (a & 0x0F) + (*value & 0x0F) + carry > 0x0F);
     cpu->registers->set_flag_c(cpu->registers, result > 0xFF);
 
     cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
@@ -1451,13 +1485,13 @@ void add_hl(struct CPU* cpu, uint16_t* value)
     uint32_t result = hl + *value;
 
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (hl & 0xFFF) + (*value & 0xFFF) > 0xFFF);
+    cpu->registers->set_flag_h(cpu->registers, (hl & 0x0FFF) + (*value & 0x0FFF) > 0x0FFF);
     cpu->registers->set_flag_c(cpu->registers, result > 0xFFFF);
 
     cpu->registers->set_register_pair(cpu->registers, HL, result & 0xFFFF);
 }
 
-EXECUTABLE_INSTRUCTION(add_hl_to_register_pair)
+EXECUTABLE_INSTRUCTION(add_register_pair_to_hl)
 {
     enum RegisterPair rp    = param->rp_1;
     uint16_t          value = cpu->registers->get_register_pair(cpu->registers, rp);
@@ -1478,7 +1512,7 @@ EXECUTABLE_INSTRUCTION(add_imm_to_sp)
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (sp & 0xF) + (value & 0xF) > 0xF);
+    cpu->registers->set_flag_h(cpu->registers, (sp & 0x0F) + (value & 0x0F) > 0x0F);
     cpu->registers->set_flag_c(cpu->registers, (sp & 0xFF) + (value & 0xFF) > 0xFF);
 
     cpu->registers->set_control_register(cpu->registers, SP, result);
@@ -1487,21 +1521,33 @@ EXECUTABLE_INSTRUCTION(add_imm_to_sp)
 EXECUTABLE_INSTRUCTION(daa)
 {
     uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t adjust = 0;
+    bool    carry  = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t adjust = carry ? 0x60 : 0x00;
 
-    if (cpu->registers->get_flag_h(cpu->registers) ||
-        (!cpu->registers->get_flag_n(cpu->registers) && (a & 0xF) > 9)) {
+    bool half_carry = cpu->registers->get_flag_h(cpu->registers);
+    if (half_carry) {
         adjust |= 0x06;
     }
 
-    if (cpu->registers->get_flag_c(cpu->registers) ||
-        (!cpu->registers->get_flag_n(cpu->registers) && a > 0x99)) {
-        adjust |= 0x60;
-        cpu->registers->set_flag_c(cpu->registers, true);
+    bool subtract = cpu->registers->get_flag_n(cpu->registers);
+    if (!subtract) {
+        if ((a & 0x0F) > 0x09) {
+            adjust |= 0x06;
+        }
+        if (a > 0x99) {
+            adjust |= 0x60;
+        }
+        a += adjust;
     }
-    a += cpu->registers->get_flag_n(cpu->registers) ? -adjust : adjust;
+    else {
+        a -= adjust;
+    }
+
+    // flags
     cpu->registers->set_flag_z(cpu->registers, a == 0);
     cpu->registers->set_flag_h(cpu->registers, false);
+    cpu->registers->set_flag_c(cpu->registers, adjust >= 0x60);
+
     cpu->registers->set_register_byte(cpu->registers, A, a);
 }
 
@@ -1704,10 +1750,10 @@ EXECUTABLE_INSTRUCTION(reti)
     cpu->registers->set_control_register(cpu->registers, SP, sp + 2);
     cpu->registers->set_control_register(cpu->registers, PC, address);
     // Enable interrupts
-    cpu_set_interrupt_master_enable(cpu, true);
+    cpu->interrupt_master_enable = true;
 }
 
-void rst(struct CPU* cpu, uint8_t n)
+void rst(struct CPU* cpu, uint16_t n)
 {
     uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
     uint16_t sp = cpu->registers->get_control_register(cpu->registers, SP);
@@ -1720,42 +1766,42 @@ void rst(struct CPU* cpu, uint8_t n)
 
 EXECUTABLE_INSTRUCTION(rst_00h)
 {
-    rst(cpu, 0x00);
+    rst(cpu, 0x0000);
 }
 
 EXECUTABLE_INSTRUCTION(rst_08h)
 {
-    rst(cpu, 0x08);
+    rst(cpu, 0x0008);
 }
 
 EXECUTABLE_INSTRUCTION(rst_10h)
 {
-    rst(cpu, 0x10);
+    rst(cpu, 0x0010);
 }
 
 EXECUTABLE_INSTRUCTION(rst_18h)
 {
-    rst(cpu, 0x18);
+    rst(cpu, 0x0018);
 }
 
 EXECUTABLE_INSTRUCTION(rst_20h)
 {
-    rst(cpu, 0x20);
+    rst(cpu, 0x0020);
 }
 
 EXECUTABLE_INSTRUCTION(rst_28h)
 {
-    rst(cpu, 0x28);
+    rst(cpu, 0x0028);
 }
 
 EXECUTABLE_INSTRUCTION(rst_30h)
 {
-    rst(cpu, 0x30);
+    rst(cpu, 0x0030);
 }
 
 EXECUTABLE_INSTRUCTION(rst_38h)
 {
-    rst(cpu, 0x38);
+    rst(cpu, 0x0038);
 }
 
 // Helper functions for 16-bit arithmetic
@@ -1817,7 +1863,20 @@ EXECUTABLE_INSTRUCTION(scf)
 
 EXECUTABLE_INSTRUCTION(halt)
 {
-    cpu->halted = true;
+    // Game Boy HALT bug: When IME=0 and interrupts are pending,
+    // the next instruction after HALT gets executed twice
+    uint8_t interrupt_flag   = cpu->mmu->mmu_get_byte(cpu->mmu, INTERRUPT_FLAG_ADDRESS);
+    uint8_t interrupt_enable = cpu->mmu->mmu_get_byte(cpu->mmu, 0xFFFF);
+
+    if (!cpu->interrupt_master_enable && (interrupt_flag & interrupt_enable)) {
+        // HALT bug: Don't increment PC on next instruction fetch
+        // This causes the instruction after HALT to execute twice
+        uint16_t pc = cpu->registers->get_control_register(cpu->registers, PC);
+        cpu->registers->set_control_register(cpu->registers, PC, pc - 1);
+    }
+    else {
+        cpu->halted = true;
+    }
 }
 
 EXECUTABLE_INSTRUCTION(stop)
@@ -1827,26 +1886,25 @@ EXECUTABLE_INSTRUCTION(stop)
 
 EXECUTABLE_INSTRUCTION(di)
 {
-    cpu_set_interrupt_master_enable(cpu, false);
+    cpu->interrupt_master_enable = false;
 }
 
 EXECUTABLE_INSTRUCTION(ei)
 {
-    cpu_set_interrupt_master_enable(cpu, true);
+    cpu->interrupt_master_enable = true;
 }
 
 EXECUTABLE_INSTRUCTION(ld_sp_plus_imm_to_hl)
 {
     int8_t   offset = (int8_t)cpu_step_read_byte(cpu);
     uint16_t sp     = cpu->registers->get_control_register(cpu->registers, SP);
-    uint16_t result = sp + offset;
 
     cpu->registers->set_flag_z(cpu->registers, false);
     cpu->registers->set_flag_n(cpu->registers, false);
-    cpu->registers->set_flag_h(cpu->registers, (sp & 0xF) + (offset & 0xF) > 0xF);
+    cpu->registers->set_flag_h(cpu->registers, (sp & 0x0F) + (offset & 0x0F) > 0x0F);
     cpu->registers->set_flag_c(cpu->registers, (sp & 0xFF) + (offset & 0xFF) > 0xFF);
 
-    cpu->registers->set_register_pair(cpu->registers, HL, result);
+    cpu->registers->set_register_pair(cpu->registers, HL, sp + offset);
 }
 
 EXECUTABLE_INSTRUCTION(ld_a_to_address_imm)
@@ -2087,42 +2145,42 @@ EXECUTABLE_INSTRUCTION(prefix_cb)
 
 void add_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t result = a + *value;
+    uint8_t  a      = cpu->registers->get_register_byte(cpu->registers, A);
+    uint16_t result = a + *value;
 
-    cpu->registers->set_flag_z(cpu->registers, result == 0);
+    cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, false);
     cpu->registers->set_flag_h(cpu->registers, (a & 0xF) + (*value & 0xF) > 0xF);
-    cpu->registers->set_flag_c(cpu->registers, a + *value > 0xFF);
+    cpu->registers->set_flag_c(cpu->registers, result > 0xFF);
 
-    cpu->registers->set_register_byte(cpu->registers, A, result);
+    cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
 }
 
 void sub_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t result = a - *value;
+    uint8_t  a      = cpu->registers->get_register_byte(cpu->registers, A);
+    uint16_t result = a - *value;
 
-    cpu->registers->set_flag_z(cpu->registers, result == 0);
+    cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, true);
     cpu->registers->set_flag_h(cpu->registers, (a & 0xF) < (*value & 0xF));
     cpu->registers->set_flag_c(cpu->registers, a < *value);
 
-    cpu->registers->set_register_byte(cpu->registers, A, result);
+    cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
 }
 
 void sbc_a(struct CPU* cpu, uint8_t* value)
 {
-    uint8_t a      = cpu->registers->get_register_byte(cpu->registers, A);
-    uint8_t carry  = cpu->registers->get_flag_c(cpu->registers);
-    uint8_t result = a - *value - carry;
+    uint8_t  a      = cpu->registers->get_register_byte(cpu->registers, A);
+    uint8_t  carry  = cpu->registers->get_flag_c(cpu->registers);
+    uint16_t result = a - *value - carry;
 
-    cpu->registers->set_flag_z(cpu->registers, result == 0);
+    cpu->registers->set_flag_z(cpu->registers, (result & 0xFF) == 0);
     cpu->registers->set_flag_n(cpu->registers, true);
     cpu->registers->set_flag_h(cpu->registers, (a & 0xF) < ((*value & 0xF) + carry));
     cpu->registers->set_flag_c(cpu->registers, a < (*value + carry));
 
-    cpu->registers->set_register_byte(cpu->registers, A, result);
+    cpu->registers->set_register_byte(cpu->registers, A, result & 0xFF);
 }
 
 void and_a(struct CPU* cpu, uint8_t* value)
@@ -2181,7 +2239,12 @@ uint8_t rlc(struct CPU* cpu, uint8_t value)
 {
     uint8_t carry = (value & 0x80) >> 7;
     value         = (value << 1) | carry;
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
     cpu->registers->set_flag_c(cpu->registers, carry);
+
     return value;
 }
 
@@ -2200,9 +2263,14 @@ EXECUTABLE_INSTRUCTION(rlc_address_hl)
 
 uint8_t rrc(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry = (value & 0x01);
+    uint8_t carry = value & 0x01;
     value         = (value >> 1) | (carry << 7);
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
     cpu->registers->set_flag_c(cpu->registers, carry);
+
     return value;
 }
 
@@ -2221,10 +2289,15 @@ EXECUTABLE_INSTRUCTION(rrc_address_hl)
 
 uint8_t rl(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
-    uint8_t carry_temp = (value & 0x80) >> 7;
-    value              = (value << 1) | carry;
-    cpu->registers->set_flag_c(cpu->registers, carry_temp);
+    uint8_t old_carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t new_carry = (value & 0x80) >> 7;
+    value             = (value << 1) | old_carry;
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
+    cpu->registers->set_flag_c(cpu->registers, new_carry);
+
     return value;
 }
 
@@ -2243,10 +2316,15 @@ EXECUTABLE_INSTRUCTION(rl_address_hl)
 
 uint8_t rr(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
-    uint8_t carry_temp = (value & 0x01);
-    value              = (value >> 1) | (carry << 7);
-    cpu->registers->set_flag_c(cpu->registers, carry_temp);
+    uint8_t old_carry = cpu->registers->get_flag_c(cpu->registers);
+    uint8_t new_carry = value & 0x01;
+    value             = (value >> 1) | (old_carry << 7);
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
+    cpu->registers->set_flag_c(cpu->registers, new_carry);
+
     return value;
 }
 
@@ -2265,10 +2343,14 @@ EXECUTABLE_INSTRUCTION(rr_address_hl)
 
 uint8_t sla(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
-    uint8_t carry_temp = (value & 0x80) >> 7;
-    value <<= 1;
-    cpu->registers->set_flag_c(cpu->registers, carry_temp);
+    uint8_t carry = (value & 0x80) >> 7;
+    value         = value << 1;
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
+    cpu->registers->set_flag_c(cpu->registers, carry);
+
     return value;
 }
 
@@ -2287,10 +2369,14 @@ EXECUTABLE_INSTRUCTION(sla_address_hl)
 
 uint8_t sra(struct CPU* cpu, uint8_t value)
 {
-    uint8_t msb   = value & 0x80;
     uint8_t carry = value & 0x01;
-    value         = (value >> 1) | msb;
+    value         = (value >> 1) | (value & 0x80);
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
     cpu->registers->set_flag_c(cpu->registers, carry);
+
     return value;
 }
 
@@ -2337,10 +2423,14 @@ EXECUTABLE_INSTRUCTION(swap_address_hl)
 
 uint8_t srl(struct CPU* cpu, uint8_t value)
 {
-    uint8_t carry      = cpu->registers->get_flag_c(cpu->registers);
-    uint8_t carry_temp = value & 0x01;
-    value >>= 1;
-    cpu->registers->set_flag_c(cpu->registers, carry_temp);
+    uint8_t carry = value & 0x01;
+    value         = value >> 1;
+
+    cpu->registers->set_flag_z(cpu->registers, value == 0);
+    cpu->registers->set_flag_n(cpu->registers, false);
+    cpu->registers->set_flag_h(cpu->registers, false);
+    cpu->registers->set_flag_c(cpu->registers, carry);
+
     return value;
 }
 
@@ -2357,27 +2447,29 @@ EXECUTABLE_INSTRUCTION(srl_address_hl)
     cpu->mmu->mmu_set_byte(cpu->mmu, address, srl(cpu, value));
 }
 
-uint8_t bit(struct CPU* cpu, uint8_t value, uint8_t bit_position)
+
+
+void bit(struct CPU* cpu, uint8_t value, uint8_t bit_position)
 {
-    uint8_t bit_value = (value >> bit_position) & 0x01;
-    cpu->registers->set_flag_z(cpu->registers, bit_value == 0);
+    bool is_bit_set = (value >> bit_position) & 0x01;
+
+    cpu->registers->set_flag_z(cpu->registers, !is_bit_set);
     cpu->registers->set_flag_n(cpu->registers, false);
     cpu->registers->set_flag_h(cpu->registers, true);
-    return bit_value;
+    // C flag is not affected
 }
 
 EXECUTABLE_INSTRUCTION(bit_register)
 {
     uint8_t value = cpu->registers->get_register_byte(cpu->registers, param->reg_1);
-    cpu->registers->set_register_byte(
-        cpu->registers, param->reg_1, bit(cpu, value, param->bit_position));
+    bit(cpu, value, param->bit_position);
 }
 
 EXECUTABLE_INSTRUCTION(bit_address_hl)
 {
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
     uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
-    cpu->mmu->mmu_set_byte(cpu->mmu, address, bit(cpu, value, param->bit_position));
+    bit(cpu, value, param->bit_position);
 }
 
 uint8_t res(struct CPU* cpu, uint8_t value, uint8_t bit_position)
@@ -2416,17 +2508,4 @@ EXECUTABLE_INSTRUCTION(set_address_hl)
     uint16_t address = cpu->registers->get_register_pair(cpu->registers, HL);
     uint8_t  value   = cpu->mmu->mmu_get_byte(cpu->mmu, address);
     cpu->mmu->mmu_set_byte(cpu->mmu, address, set(cpu, param->bit_position, value));
-}
-
-// end of CB prefix functions
-
-uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte)
-{
-    CPU_DEBUG_PRINT("Executing Op Code: 0x%02X\n", op_byte);
-    struct PackedInstructionParam* param = &cpu->instruction_table[op_byte];
-    param->fn(cpu, &param->param);
-    if (param->param.result_is_alternative) {
-        return param->cycles_alternative;
-    }
-    return cpu->opcode_cycle_main[op_byte];
 }

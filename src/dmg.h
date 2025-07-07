@@ -58,4 +58,11 @@ extern struct EmulatorConfig config;
         printf(fmt, ##__VA_ARGS__);   \
     }
 
+
+void initialize_ram(struct Ram* ram);
+// New: we now generate (ensure we have a new frame) each frame in a separate function
+void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame);
+// Main loop
+void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct Form* form);
+
 #endif

@@ -9,6 +9,8 @@
 #include <math.h>
 #include <string.h>
 
+#include <time.h>
+
 #ifdef _WIN32
 #    include <sys/timeb.h>
 #else
@@ -30,6 +32,10 @@ struct EmulatorConfig
     bool                    disable_color;
     int                     verbose_level;
     struct EmulatorGlobals* globals;
+    bool                    enable_serial_print;
+    bool                    print_debug_info_this_frame;
+    bool                    fast_forward_mode;
+    bool                    disable_joypad;
 };
 
 
@@ -43,6 +49,89 @@ extern struct EmulatorConfig config;
 #define TRACE_LEVEL     3
 
 #define UNDEFINED 0xFF
+
+// RAM Registers
+
+#define ZERO_PAGE_ADDRESS 0xFF00
+#define JOYPAD_ADDRESS 0xFF00
+
+// Interrupt flags
+
+// Bit 0: V-Blank
+#define INT_VBLANK   0x01
+// Bit 1: LCDC (see STAT)
+#define INT_LCD_STAT 0x02
+// Bit 2: Timer Overflow
+#define INT_TIMER    0x04
+// Bit 3: Serial I/O transfer complete
+#define INT_SERIAL   0x08
+// Bit 4: Transition from High to Low of Pin number P10-P13
+#define INT_JOYPAD   0x10
+
+// IF - Interrupt Flag
+// Bit 4: Transition from High to Low of Pin number P10-P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer Overflow
+// Bit 1: LCDC (see STAT)
+// Bit 0: V-Blank
+#define IF_ADDRESS 0xFF0F
+
+// IE - Interrupt Enable
+// Bit 4: Transition from High to Low of Pin number P10-P13
+// Bit 3: Serial I/O transfer complete
+// Bit 2: Timer Overflow
+// Bit 1: LCDC (see STAT)
+// Bit 0: V-Blank
+// 0: disable
+// 1: enable
+#define IE_ADDRESS 0xFFFF
+
+
+// LCDC - LCD Control
+// Bit 7: LCD Display Enable (0=Off, 1=On)
+// Bit 6: Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+// Bit 5: Window Display Enable (0=Off, 1=On)
+// Bit 4: BG & Window Tile Data Select (0=8800-97FF, 1=8000-8FFF)
+// Bit 3: BG Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+// Bit 2: OBJ (Sprite) Size (0=8x8, 1=8x16)
+// Bit 1: OBJ (Sprite) Display Enable (0=Off, 1=On)
+// Bit 0: BG Display Enable (0=Off, 1=On)
+#define LCDC_ADDRESS 0xFF40
+// STAT - LCD Status
+// Bits 6-3 - Interrupt Selection By LCDC Status
+// Bit 6 - LYC=LY Coincidence (Selectable)
+// Bit 5 - Mode 10
+// Bit 4 - Mode 01
+// Bit 3 - Mode 00
+//    - 0: Non Selection
+//    - 1: Selection
+// Bit 2 - Coincidence Flag
+//    - 0: LYC not equal to LCDC LY
+//    - 1: LYC = LCDC LY
+// Bit 1-0 - Mode Flag
+//    - 00: During H-Blank
+//    - 01: During V-Blank
+//    - 10: During Searching OAM-RAM
+//    - 11: During Transfering Data to LCD Driver
+#define STAT_ADDRESS 0xFF41
+// LCD Position and Scrolling Registers
+#define SCY_ADDRESS  0xFF42  // Scroll Y (R/W) - Background vertical scroll position
+#define SCX_ADDRESS  0xFF43  // Scroll X (R/W) - Background horizontal scroll position  
+#define LY_ADDRESS   0xFF44  // LCD Y-Coordinate (R) - Current scanline being drawn (0-153)
+#define LYC_ADDRESS  0xFF45  // LY Compare (R/W) - Triggers STAT interrupt when LY == LYC
+#define DMA_ADDRESS  0xFF46  // DMA Transfer (W) - Starts DMA transfer from ROM/RAM to OAM
+#define BGP_ADDRESS  0xFF47  // BG Palette Data (R/W) - Background palette (bits 1-0: color 0, 3-2: color 1, etc.)
+#define OBP0_ADDRESS 0xFF48  // Object Palette 0 Data (R/W) - Sprite palette 0 (color 0 is transparent)
+#define OBP1_ADDRESS 0xFF49  // Object Palette 1 Data (R/W) - Sprite palette 1 (color 0 is transparent)
+#define WY_ADDRESS   0xFF4A  // Window Y Position (R/W) - Window top edge position
+#define WX_ADDRESS   0xFF4B  // Window X Position (R/W) - Window left edge position minus 7
+
+// Timer Registers
+#define TIMER_DIV_ADDRESS  0xFF04  // Divider Register (R/W) - Incremented at 16384Hz, writing resets to 0
+#define TIMER_TIMA_ADDRESS 0xFF05  // Timer Counter (R/W) - Incremented by frequency in TAC, triggers interrupt on overflow
+#define TIMER_TMA_ADDRESS  0xFF06  // Timer Modulo (R/W) - Value loaded into TIMA when it overflows
+#define TIMER_TAC_ADDRESS  0xFF07  // Timer Control (R/W) - Bit 2: Enable, Bits 1-0: Clock select (00=4096Hz, 01=262144Hz, 10=65536Hz, 11=16384Hz)
+
 
 // Regular Colors
 #define ANSI_COLOR_BLACK   "\x1b[30m"
