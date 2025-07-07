@@ -1,5 +1,41 @@
 # gameboy-emulator
-A rework of https://github.com/xiongnemo/nekomimi-gameboy-emulator-1 (https://github.com/DarkKowalski/nekomimi-gameboy-emulator)
+A pure C (C with class, if you may say) rework of https://github.com/xiongnemo/nekomimi-gameboy-emulator-1 (https://github.com/DarkKowalski/nekomimi-gameboy-emulator)
+
+## Status
+
+Full CPU Emulation is working.
+
+MBC1 + ROM switching is working, external RAM is not.
+
+PPU is working.
+
+Joypad is working.
+
+RAM is working.
+
+APU does not exist yet.
+
+### Screenshots
+
+#### CPU Instructions
+
+![CPU Instructions](./screenshots/cpu_instr.bmp)
+
+#### The Legend of Zelda: Link's Awakening
+
+![Zelda](./screenshots/Zelda.bmp)
+
+#### Kirby's Dream Land (USA)
+
+![Kirby's Dream Land (USA)](./screenshots/Kirby.png)
+
+#### Kirby's Dream Land 2 (USA)
+
+![Kirby's Dream Land 2 (USA)](./screenshots/Kirby2.bmp)
+
+#### Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)
+
+![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](./screenshots/MARIOLAND2.png)
 
 ## Development
 
@@ -8,15 +44,34 @@ A rework of https://github.com/xiongnemo/nekomimi-gameboy-emulator-1 (https://gi
 * gcc: Some macros is GNU extension.
 
 ```pwsh
-nemo @ nemo-tablet-14c in ~\Documents\GitHub\gameboy-emulator on git:dev x [00:00:00]
+nemo @ nemo-g15-5511 in ~\Documents\GitHub\gameboy-emulator on git:dev x [00:00:00]
 $ gcc --version
-gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0
-Copyright (C) 2024 Free Software Foundation, Inc.
+gcc.exe (x86_64-posix-seh-rev0, Built by MinGW-Builds project) 15.1.0
+Copyright (C) 2025 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
 
 * SDL3: You should have SDL3 installed or accessible in your system.
+  
+To use the provided Makefile, the folder structure (on Windows) should be as follows:
+```
+├─reference
+│  └─...
+├─SDL3
+│  ├─bin
+│  ├─include
+│  │  └─SDL3
+│  ├─lib
+│  │  ├─cmake
+│  │  │  └─SDL3
+│  │  └─pkgconfig
+│  └─share
+│      └─licenses
+│          └─SDL3
+├─src
+└─test
+```
 
 ### Example configuration for VS Code
 
@@ -45,3 +100,59 @@ make <cpu|ram|cartridge>-test > test.log 2>test.err.log
 make
 ./dmg <rom_file>
 ```
+
+#### Flags
+
+```
+Usage: ./dmg [options] <rom_file>
+Options:
+  -h, --help            Display this help message
+  -d                    Enable debug output
+  -v                    Verbose output (WARN, -v INFO, -vv DEBUG, -vvv TRACE, default: 0)
+  -s, --scale <n>       Window scale factor (1-6, default: 2)
+  -p, --serial          Enable serial output printing
+Examples:
+  ./dmg SuperMarioLand.gb
+  ./dmg -d -vv zelda.gb
+  ./dmg --serial cpu_instr.gb
+```
+
+#### Keys
+
+```
+W - Up
+A - Left
+S - Down
+D - Right
+J - A
+K - B
+LSHIFT - SELECT
+ENTER - START
+ESC - Quit
+P - Print FPS (lifetime + this frame)
+F1 - Screenshot (Default: gameboy_framebuffer.bmp)
+LALT - Toggle joypad (enable/disable)
+LCTRL - Fast forward
+```
+
+## Credits
+
+[The Ultimate Game Boy Talk (33c3)](https://www.youtube.com/watch?v=HyzD8pNlpwI)
+
+[cboy](https://github.com/0xf4b1/cboy)
+
+Blargg's test ROMs and source code
+
+[gbops](https://izik1.github.io/gbops/index.html)
+
+[GBEDG](https://hacktix.github.io/GBEDG/)
+
+[emudev](https://emudev.de/gameboy-emulator/)
+
+[gbdev](https://gbdev.io/pandocs/)
+
+[Reddit comment on POP AF](https://www.reddit.com/r/EmuDev/comments/hi237c/gameboy_blargg_test_special01_errors_on_pop_af/)
+
+[SDL3](https://github.com/libsdl-org/SDL)
+
+And of course, our [original project](https://github.com/DarkKowalski/nekomimi-gameboy-emulator) and Thank you ALL.
