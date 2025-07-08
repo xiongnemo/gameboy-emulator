@@ -3,17 +3,40 @@ A pure C (C with class, if you may say) rework of https://github.com/xiongnemo/n
 
 ## Status
 
-Full CPU Emulation is working.
+### CPU
 
-MBC1 + ROM switching is working, external RAM is not.
+* Full CPU Emulation: working.
+* Interrupts: working.
 
-PPU is working.
+### Cartridge (MBC)
 
-Joypad is working.
+* ROM switching: working
 
-RAM is working.
+* External RAM: implemented, but seems not implemented correctly. Exist in the code but not used (Refer to `mmu.c`).
 
-APU exists (callback driven) but the speed is roughly 2 to 6 times as fast as the emulation speed.
+* MBC Implemented:
+  * MBC1 (Address lines may not be correct)
+  * MBC2 (Not tested)
+  * MBC3
+  * MBC5 (Not tested)
+  * Rumble Carts
+
+### PPU
+
+* PPU (Scanline): working.
+* PPU (FIFO): Can't render windows, will fix.
+
+### Joypad
+
+* Joypad: working.
+
+### RAM
+
+* RAM: working.
+
+### APU
+
+* APU exists (callback driven) but the speed is roughly 2 to 6 times as fast as the emulation speed.
 
 ### Screenshots
 
@@ -36,6 +59,24 @@ APU exists (callback driven) but the speed is roughly 2 to 6 times as fast as th
 #### Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)
 
 ![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](./screenshots/MARIOLAND2.png)
+
+![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](./screenshots/MARIOLAND2.bmp)
+
+#### Pokemon Blue (MBC3)
+
+![Pokemon Blue](./screenshots/pokemon_blue.bmp)
+
+![Pokemon Blue](./screenshots/pokemon_blue.png)
+
+![Pokemon Blue](./screenshots/pokemon_blue_1.bmp)
+
+![Pokemon Blue](./screenshots/pokemon_blue_2.bmp)
+
+#### Harvest Moon GB
+
+![Harvest Moon GB](./screenshots/harvest_moon.png)
+
+![Harvest Moon GB](./screenshots/harvest_moon.bmp)
 
 ## Development
 

@@ -72,6 +72,25 @@ extern struct EmulatorConfig config;
 // Gameboy MBC1 magic number end address
 #define GAMEBOY_CARTRIDGE_MBC1_MAGIC_NUMBER_END_ADDRESS 0x4000
 
+// Controller types
+#define CONTROLLER_ROM_ONLY    0x00
+#define CONTROLLER_MBC1        0x01
+#define CONTROLLER_MBC1_RAM    0x02
+#define CONTROLLER_MBC1_RAM_BATTERY 0x03
+#define CONTROLLER_MBC2        0x05
+#define CONTROLLER_MBC2_BATTERY 0x06
+#define CONTROLLER_MBC3_TIMER_BATTERY 0x0F
+#define CONTROLLER_MBC3_TIMER_RAM_BATTERY 0x10
+#define CONTROLLER_MBC3        0x11
+#define CONTROLLER_MBC3_RAM    0x12
+#define CONTROLLER_MBC3_RAM_BATTERY 0x13
+#define CONTROLLER_MBC5        0x19
+#define CONTROLLER_MBC5_RAM    0x1A
+#define CONTROLLER_MBC5_RAM_BATTERY 0x1B
+#define CONTROLLER_MBC5_RUMBLE 0x1C
+#define CONTROLLER_MBC5_RUMBLE_RAM 0x1D
+#define CONTROLLER_MBC5_RUMBLE_RAM_BATTERY 0x1E
+
 struct Cartridge
 {
     uint8_t* rom_bank_0;
@@ -91,6 +110,19 @@ struct Cartridge
     uint8_t* ram_data;
     size_t   ram_size;
     bool     ram_enabled;
+
+    // MBC2 internal RAM (512 x 4 bits)
+    uint8_t mbc2_ram[256];  // 512 nibbles stored as 256 bytes
+    bool    mbc2_ram_enabled;
+
+    // Controller type
+    uint8_t controller_type;
+
+    // MBC5 extended ROM banking
+    uint16_t mbc5_rom_bank;  // 9-bit ROM bank for MBC5
+
+    // Rumble motor (for rumble carts)
+    bool rumble_motor_on;
 
     // alternative ROM bank id
     uint8_t rom_alternative_bank;
