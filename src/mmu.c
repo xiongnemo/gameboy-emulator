@@ -11,6 +11,8 @@ struct MMU* create_mmu(struct Cartridge* cartridge, struct Ram* ram, struct PPU*
     mmu->mmu_set_byte = mmu_set_byte;
     mmu->mmu_get_word = mmu_get_word;
     mmu->mmu_set_word = mmu_set_word;
+    mmu->mmu_attach_joypad = mmu_attach_joypad;
+    mmu->mmu_attach_apu = mmu_attach_apu;
     return mmu;
 }
 
@@ -86,6 +88,13 @@ uint8_t mmu_get_byte(struct MMU* mmu, uint16_t address)
     if (address == 0xFF00 && config.disable_joypad) {
         return 0x3F;
     }
+    
+    // Handle APU registers (0xFF10-0xFF26, 0xFF30-0xFF3F)
+    if (mmu->apu && ((address >= 0xFF10 && address <= 0xFF26) || 
+                     (address >= 0xFF30 && address <= 0xFF3F))) {
+        return mmu->apu->read_register(mmu->apu, address);
+    }
+    
     // Handle unusable memory region
     if (address >= 0xFEA0 && address <= 0xFEFF) {
         return 0x00; // Reads from this region should return 0x00 on DMG
@@ -106,12 +115,24 @@ void mmu_attach_joypad(struct MMU* mmu, struct Joypad* joypad)
     mmu->joypad = joypad;
 }
 
+void mmu_attach_apu(struct MMU* mmu, struct APU* apu)
+{
+    mmu->apu = apu;
+}
+
 void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte)
 {
     // // Block writes to LY register - it's read-only for CPU
     // if (address == 0xFF44) { // LY_ADDRESS
     //     return; // LY register is read-only, managed by PPU
     // }
+    
+    // Handle APU registers (0xFF10-0xFF26, 0xFF30-0xFF3F)
+    if (mmu->apu && ((address >= 0xFF10 && address <= 0xFF26) || 
+                     (address >= 0xFF30 && address <= 0xFF3F))) {
+        mmu->apu->write_register(mmu->apu, address, byte);
+        return;
+    }
 
     if (address == 0xFF00) {
         // controls

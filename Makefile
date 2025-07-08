@@ -54,6 +54,9 @@ FORM_HEADER=src/form.h
 JOYPAD_SRC=src/joypad.c
 JOYPAD_HEADER=src/joypad.h
 
+APU_SRC=src/apu.c
+APU_HEADER=src/apu.h
+
 # Object files
 RAM_OBJ=$(BUILD_DIR)/ram.o
 VRAM_OBJ=$(BUILD_DIR)/vram.o
@@ -66,9 +69,10 @@ REGISTER_OBJ=$(BUILD_DIR)/register.o
 PPU_OBJ=$(BUILD_DIR)/ppu.o
 FORM_OBJ=$(BUILD_DIR)/form.o
 JOYPAD_OBJ=$(BUILD_DIR)/joypad.o
+APU_OBJ=$(BUILD_DIR)/apu.o
 
 # All object files for the main executable
-DMG_OBJS=$(DMG_OBJ) $(MMU_OBJ) $(TIMER_OBJ) $(CPU_OBJ) $(PPU_OBJ) $(CARTRIDGE_OBJ) $(RAM_OBJ) $(VRAM_OBJ) $(REGISTER_OBJ) $(FORM_OBJ) $(JOYPAD_OBJ)
+DMG_OBJS=$(DMG_OBJ) $(MMU_OBJ) $(TIMER_OBJ) $(CPU_OBJ) $(PPU_OBJ) $(CARTRIDGE_OBJ) $(RAM_OBJ) $(VRAM_OBJ) $(REGISTER_OBJ) $(FORM_OBJ) $(JOYPAD_OBJ) $(APU_OBJ)
 
 # Test executables
 FORM_TEST=test/nemo-sdl-create-form
@@ -117,6 +121,9 @@ $(FORM_OBJ): $(FORM_SRC) $(FORM_HEADER) | $(BUILD_DIR)
 $(JOYPAD_OBJ): $(JOYPAD_SRC) $(JOYPAD_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(JOYPAD_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
+$(APU_OBJ): $(APU_SRC) $(APU_HEADER) | $(BUILD_DIR)
+	$(CC) -c $(APU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
+
 # Debug object file rules
 $(BUILD_DIR)/ram-debug.o: $(RAM_SRC) $(RAM_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(RAM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
@@ -151,8 +158,11 @@ $(BUILD_DIR)/form-debug.o: $(FORM_SRC) $(FORM_HEADER) | $(BUILD_DIR)
 $(BUILD_DIR)/joypad-debug.o: $(JOYPAD_SRC) $(JOYPAD_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(JOYPAD_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
+$(BUILD_DIR)/apu-debug.o: $(APU_SRC) $(APU_HEADER) | $(BUILD_DIR)
+	$(CC) -c $(APU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
 # Debug object files collection
-DMG_DEBUG_OBJS=$(BUILD_DIR)/dmg-debug.o $(BUILD_DIR)/mmu-debug.o $(BUILD_DIR)/timer-debug.o $(BUILD_DIR)/cpu-debug.o $(BUILD_DIR)/ppu-debug.o $(BUILD_DIR)/cartridge-debug.o $(BUILD_DIR)/ram-debug.o $(BUILD_DIR)/vram-debug.o $(BUILD_DIR)/register-debug.o $(BUILD_DIR)/form-debug.o $(BUILD_DIR)/joypad-debug.o
+DMG_DEBUG_OBJS=$(BUILD_DIR)/dmg-debug.o $(BUILD_DIR)/mmu-debug.o $(BUILD_DIR)/timer-debug.o $(BUILD_DIR)/cpu-debug.o $(BUILD_DIR)/ppu-debug.o $(BUILD_DIR)/cartridge-debug.o $(BUILD_DIR)/ram-debug.o $(BUILD_DIR)/vram-debug.o $(BUILD_DIR)/register-debug.o $(BUILD_DIR)/form-debug.o $(BUILD_DIR)/joypad-debug.o $(BUILD_DIR)/apu-debug.o
 
 default: all
 
@@ -231,6 +241,6 @@ define delete_executables_by_name
 endef
 
 clean:
-	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(REGISTER_TEST))
+	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(REGISTER_TEST) $(CPU_TEST))
 	rm -rf $(BUILD_DIR)
 	rm -f dmg dmg.exe

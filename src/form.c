@@ -36,7 +36,7 @@ struct Form* create_form(struct PPU* ppu, struct Joypad* joypad, char* rom_name)
 
     // init video and joystick
     FORM_DEBUG_PRINT("Initializing SDL...%s", "\n");
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
         FORM_EMERGENCY_PRINT("Failed to initialize SDL: %s\n", SDL_GetError());
         free(form);
         return NULL;

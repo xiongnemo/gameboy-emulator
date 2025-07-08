@@ -13,7 +13,7 @@ Joypad is working.
 
 RAM is working.
 
-APU does not exist yet.
+APU exists (callback driven) but the speed is roughly 2 to 6 times as fast as the emulation speed.
 
 ### Screenshots
 

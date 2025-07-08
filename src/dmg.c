@@ -17,7 +17,7 @@ void show_usage(const char* program_name)
     printf("  %s --scale 3 pokemon.gb\n", program_name);
     // wait for user interaction
     printf("You can close the window now...");
-    getchar();
+    // getchar();
 }
 
 struct EmulatorConfig config = {
@@ -214,6 +214,18 @@ int main(int argc, char* argv[])
     DMG_DEBUG_PRINT("Attaching cpu to timer...%s", "\n");
     cpu_attach_timer(cpu, timer);
 
+    // bring up apu
+    DMG_DEBUG_PRINT("Bringing up APU...%s", "\n");
+    struct APU* apu = create_apu();
+    if (apu == NULL) {
+        DMG_EMERGENCY_PRINT("Failed to create APU\n");
+        exit(EXIT_FAILURE);
+    }
+    DMG_DEBUG_PRINT("Attaching MMU to APU...%s", "\n");
+    apu_attach_mmu(apu, mmu);
+    DMG_DEBUG_PRINT("Attaching APU to MMU...%s", "\n");
+    mmu_attach_apu(mmu, apu);
+
     // bring up joypad
     DMG_DEBUG_PRINT("Bringing up joypad...%s", "\n");
     struct Joypad* joypad = create_joypad(mmu);
@@ -235,27 +247,52 @@ int main(int argc, char* argv[])
     // initializing ram
     DMG_DEBUG_PRINT("Initializing ram registers...%s", "\n");
     initialize_ram(ram);
+    
+    // Initialize APU registers with default values
+    DMG_DEBUG_PRINT("Initializing APU registers...%s", "\n");
+    if (apu && mmu) {
+        mmu->mmu_set_byte(mmu, 0xFF10, 0x80);
+        mmu->mmu_set_byte(mmu, 0xFF11, 0xBF);
+        mmu->mmu_set_byte(mmu, 0xFF12, 0xF3);
+        mmu->mmu_set_byte(mmu, 0xFF14, 0xBF);
+        mmu->mmu_set_byte(mmu, 0xFF16, 0x3F);
+        mmu->mmu_set_byte(mmu, 0xFF17, 0x00);
+        mmu->mmu_set_byte(mmu, 0xFF19, 0xBF);
+        mmu->mmu_set_byte(mmu, 0xFF1A, 0x7F);
+        mmu->mmu_set_byte(mmu, 0xFF1B, 0xFF);
+        mmu->mmu_set_byte(mmu, 0xFF1C, 0x9F);
+        mmu->mmu_set_byte(mmu, 0xFF1E, 0xBF);
+        mmu->mmu_set_byte(mmu, 0xFF20, 0xFF);
+        mmu->mmu_set_byte(mmu, 0xFF21, 0x00);
+        mmu->mmu_set_byte(mmu, 0xFF22, 0x00);
+        mmu->mmu_set_byte(mmu, 0xFF23, 0xBF);
+        mmu->mmu_set_byte(mmu, 0xFF24, 0x77);
+        mmu->mmu_set_byte(mmu, 0xFF25, 0xF3);
+        mmu->mmu_set_byte(mmu, 0xFF26, 0xF1);
+    }
 
     // Main emulation loop here
     DMG_DEBUG_PRINT("Starting emulation loop...%s", "\n");
-    main_loop(ppu, cpu, timer, form);
+    main_loop(ppu, cpu, timer, form, apu);
 
     // Clean up
     DMG_DEBUG_PRINT("Cleaning up...%s", "\n");
+    free_apu(apu);
     free_cpu(cpu);
     free_form(form);
 
     return 0;
 }
 
-void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct Form* form)
+void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct Form* form, struct APU* apu)
 {
 
     // record time for each frame
     double last_time   = get_time_in_seconds();
     double start_time  = last_time;
     int    frame_count = 1;
-    float  fps         = get_current_window_display_mode(form)->refresh_rate;
+    // Game Boy runs at 4194304 Hz ÷ 70224 cycles/frame = 59.7275 FPS
+    float fps = 30.0f;
 
     while (true) {
         // Process input - if this returns false, exit the loop
@@ -301,6 +338,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         // Execute instructions for a full frame duration (154 scanlines)
         for (uint8_t i = 0; i < 154; i++) {
             cpu_step_for_cycles(cpu, 456);
+            // APU timing handled entirely by callback - no stepping needed!
             // Don't step PPU when LCD is disabled
         }
         return;
@@ -388,24 +426,8 @@ void initialize_ram(struct Ram* ram)
     ram->set_ram_byte(ram, 0xFF05, 0x00);
     ram->set_ram_byte(ram, 0xFF06, 0x00);
     ram->set_ram_byte(ram, 0xFF07, 0x00);
-    ram->set_ram_byte(ram, 0xFF10, 0x80);
-    ram->set_ram_byte(ram, 0xFF11, 0xBF);
-    ram->set_ram_byte(ram, 0xFF12, 0xF3);
-    ram->set_ram_byte(ram, 0xFF14, 0xBF);
-    ram->set_ram_byte(ram, 0xFF16, 0x3F);
-    ram->set_ram_byte(ram, 0xFF17, 0x00);
-    ram->set_ram_byte(ram, 0xFF19, 0xBF);
-    ram->set_ram_byte(ram, 0xFF1A, 0x7F);
-    ram->set_ram_byte(ram, 0xFF1B, 0xFF);
-    ram->set_ram_byte(ram, 0xFF1C, 0x9F);
-    ram->set_ram_byte(ram, 0xFF1E, 0xBF);
-    ram->set_ram_byte(ram, 0xFF20, 0xFF);
-    ram->set_ram_byte(ram, 0xFF21, 0x00);
-    ram->set_ram_byte(ram, 0xFF22, 0x00);
-    ram->set_ram_byte(ram, 0xFF23, 0xBF);
-    ram->set_ram_byte(ram, 0xFF24, 0x77);
-    ram->set_ram_byte(ram, 0xFF25, 0xF3);
-    ram->set_ram_byte(ram, 0xFF26, 0xF1);
+    // APU registers are now handled by the APU component
+    // These will be initialized through the MMU which routes to APU
     ram->set_ram_byte(ram, 0xFF40, 0x91);
     ram->set_ram_byte(ram, 0xFF42, 0x00);
     ram->set_ram_byte(ram, 0xFF43, 0x00);
