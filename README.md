@@ -196,4 +196,4 @@ Blargg's test ROMs and source code
 
 [SDL3](https://github.com/libsdl-org/SDL)
 
-And of course, our [original project](https://github.com/DarkKowalski/nekomimi-gameboy-emulator) and Thank you ALL.
+And of course, our [original project](https://github.com/DarkKowalski/nekomimi-gameboy-emulator) and [Thank](https://web.archive.org/web/20190629070137/https://w630.cc/2019-4-6/) [you](https://www.researchgate.net/publication/344809743_Investigating_the_Understanding_of_Plagiarism_A_Case_Study_of_Code_Plagiarism_in_China) [ALL](https://github.com/bigstomach/GB-Classic-Simulator).
