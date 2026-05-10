@@ -58,6 +58,7 @@ extern struct EmulatorConfig config;
 
 // CPU clock speed: 4.194304 MHz
 #define CPU_CLOCK_SPEED 4194304
+#define CPU_M_CYCLE_SPEED (CPU_CLOCK_SPEED / 4)
 
 // CB Prefix
 #define CB_PREFIX        0xCB
@@ -148,6 +149,9 @@ struct CPU
     // Timer
     struct Timer* timer;
 
+    // Audio Processing Unit
+    struct APU* apu;
+
     // serial output
     bool serial_output;
 
@@ -170,7 +174,8 @@ struct CPU
 
     // Public method pointers
     void (*cpu_attach_timer)(struct CPU* cpu, struct Timer* timer);
-    uint8_t (*cpu_step_for_cycles)(struct CPU* cpu, uint8_t cycles);   // Step for given number of cycles
+    void (*cpu_attach_apu)(struct CPU* cpu, struct APU* apu);
+    void (*cpu_step_for_cycles)(struct CPU* cpu, int16_t cycles);   // Step for given M-cycles
     uint8_t (*cpu_step_next)(struct CPU*);   // Step next instruction (or interrupt)
 
     // instruction table (function pointers), 256 entries
@@ -243,7 +248,10 @@ void        free_cpu(struct CPU* cpu);
 // Attach timer
 void cpu_attach_timer(struct CPU* cpu, struct Timer* timer);
 
-// Step for given number of cycles
+// Attach APU
+void cpu_attach_apu(struct CPU* cpu, struct APU* apu);
+
+// Step for given number of M-cycles
 void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles);
 
 // Step next instruction (or interrupt)

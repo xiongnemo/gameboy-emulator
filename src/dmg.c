@@ -225,6 +225,8 @@ int main(int argc, char* argv[])
     apu_attach_mmu(apu, mmu);
     DMG_DEBUG_PRINT("Attaching APU to MMU...%s", "\n");
     mmu_attach_apu(mmu, apu);
+    DMG_DEBUG_PRINT("Attaching APU to CPU...%s", "\n");
+    cpu_attach_apu(cpu, apu);
 
     // bring up joypad
     DMG_DEBUG_PRINT("Bringing up joypad...%s", "\n");
@@ -243,6 +245,9 @@ int main(int argc, char* argv[])
         DMG_EMERGENCY_PRINT("Failed to create form\n");
         exit(EXIT_FAILURE);
     }
+    if (!apu_start_audio(apu)) {
+        DMG_WARN_PRINT("APU audio output unavailable; continuing in silent mode\n");
+    }
 
     // initializing ram
     DMG_DEBUG_PRINT("Initializing ram registers...%s", "\n");
@@ -251,6 +256,7 @@ int main(int argc, char* argv[])
     // Initialize APU registers with default values
     DMG_DEBUG_PRINT("Initializing APU registers...%s", "\n");
     if (apu && mmu) {
+        mmu->mmu_set_byte(mmu, 0xFF26, 0xF1);
         mmu->mmu_set_byte(mmu, 0xFF10, 0x80);
         mmu->mmu_set_byte(mmu, 0xFF11, 0xBF);
         mmu->mmu_set_byte(mmu, 0xFF12, 0xF3);
@@ -268,7 +274,6 @@ int main(int argc, char* argv[])
         mmu->mmu_set_byte(mmu, 0xFF23, 0xBF);
         mmu->mmu_set_byte(mmu, 0xFF24, 0x77);
         mmu->mmu_set_byte(mmu, 0xFF25, 0xF3);
-        mmu->mmu_set_byte(mmu, 0xFF26, 0xF1);
     }
 
     // Main emulation loop here
@@ -286,13 +291,15 @@ int main(int argc, char* argv[])
 
 void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct Form* form, struct APU* apu)
 {
+    (void)timer;
+    (void)apu;
 
     // record time for each frame
     double last_time   = get_time_in_seconds();
     double start_time  = last_time;
     int    frame_count = 1;
-    // Game Boy runs at 4194304 Hz ÷ 70224 cycles/frame = 59.7275 FPS
-    float fps = 30.0f;
+    // Game Boy runs at 1048576 M-cycles / 17556 M-cycles per frame = 59.7275 FPS.
+    float fps = 59.7275f;
 
     while (true) {
         // Process input - if this returns false, exit the loop
@@ -337,8 +344,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         ppu_set_ly(ppu, 0);
         // Execute instructions for a full frame duration (154 scanlines)
         for (uint8_t i = 0; i < 154; i++) {
-            cpu_step_for_cycles(cpu, 456);
-            // APU timing handled entirely by callback - no stepping needed!
+            cpu_step_for_cycles(cpu, 114);
             // Don't step PPU when LCD is disabled
         }
         return;
@@ -367,7 +373,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         if ((config.fast_forward_mode && current_frame % 4 == 0) || !config.fast_forward_mode) {
             ppu_oam_search(ppu);  // Actually perform OAM search to populate sprite buffer!
         }
-        cpu_step_for_cycles(cpu, 80);
+        cpu_step_for_cycles(cpu, 20);
 
         // Pixel Transfer (Mode 3)
         // https://hacktix.github.io/GBEDG/ppu/
@@ -377,7 +383,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         // specifics to these timing differences will be explained later on. CPU can't access VRAM
         // and OAM here
         ppu_set_mode(ppu, MODE_PIXEL_TRANSFER);
-        cpu_step_for_cycles(cpu, 172);
+        cpu_step_for_cycles(cpu, 43);
         if ((config.fast_forward_mode && current_frame % 4 == 0) || !config.fast_forward_mode) {
             ppu_render_scanline_ly(ppu, ly);
         }
@@ -390,7 +396,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         // less "padding" the duration of the scanline to a total of 456 T-Cycles. The PPU
         // effectively pauses during this mode.
         ppu_set_mode(ppu, MODE_HBLANK);
-        cpu_step_for_cycles(cpu, 204);
+        cpu_step_for_cycles(cpu, 51);
     }
 
     // V-Blank interrupt happening here
@@ -415,7 +421,7 @@ void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
         // MODE 1: V-Blank (456 cycles per scanline)
         ppu_set_ly(ppu, ly);
         ppu_set_mode(ppu, MODE_VBLANK);
-        cpu_step_for_cycles(cpu, 456);
+        cpu_step_for_cycles(cpu, 114);
     }
 }
 

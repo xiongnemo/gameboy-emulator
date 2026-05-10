@@ -1057,6 +1057,8 @@ struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
     }
     cpu->registers              = registers;
     cpu->mmu                    = mmu;
+    cpu->timer                  = NULL;
+    cpu->apu                    = NULL;
     cpu->opcode_cycle_main      = opcode_cycle_main;
     cpu->opcode_cycle_prefix_cb = opcode_cycle_prefix_cb;
 
@@ -1066,7 +1068,10 @@ struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
     cpu->interrupt_master_enable = false;
 
     // set method pointers
-    cpu->cpu_step_next = cpu_step_next;
+    cpu->cpu_attach_timer    = cpu_attach_timer;
+    cpu->cpu_attach_apu      = cpu_attach_apu;
+    cpu->cpu_step_for_cycles = cpu_step_for_cycles;
+    cpu->cpu_step_next       = cpu_step_next;
 
     // set instruction tables
     cpu->instruction_table    = instruction_table;
@@ -1166,12 +1171,26 @@ void cpu_attach_timer(struct CPU* cpu, struct Timer* timer)
     cpu->timer = timer;
 }
 
+void cpu_attach_apu(struct CPU* cpu, struct APU* apu)
+{
+    cpu->apu = apu;
+}
+
 void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles)
 {
     while (cycles > 0) {
         uint8_t cycles_to_step = cpu_step_next(cpu);
+        if (cycles_to_step == 0) {
+            return;
+        }
         cycles -= cycles_to_step;
-        cpu->timer->add_time(cpu->timer, cycles_to_step);
+        cpu->cycles += cycles_to_step;
+        if (cpu->timer) {
+            cpu->timer->add_time(cpu->timer, cycles_to_step);
+        }
+        if (cpu->apu && cpu->apu->step) {
+            cpu->apu->step(cpu->apu, cycles_to_step);
+        }
     }
     return;
 }

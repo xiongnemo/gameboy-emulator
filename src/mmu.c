@@ -6,6 +6,8 @@ struct MMU* create_mmu(struct Cartridge* cartridge, struct Ram* ram, struct PPU*
     mmu->cartridge  = cartridge;
     mmu->ram        = ram;
     mmu->ppu        = ppu;
+    mmu->joypad     = NULL;
+    mmu->apu        = NULL;
     // set method pointers
     mmu->mmu_get_byte = mmu_get_byte;
     mmu->mmu_set_byte = mmu_set_byte;

@@ -80,6 +80,7 @@ RAM_TEST=test/ram-test
 CARTRIDGE_TEST=test/cartridge-test
 REGISTER_TEST=test/register-test
 CPU_TEST=test/cpu-test
+APU_TEST=test/apu-test
 
 build: all
 
@@ -182,7 +183,7 @@ windows-release: $(DMG_OBJS)
 debug: $(DMG_DEBUG_OBJS)
 	$(CC) $(DMG_DEBUG_OBJS) -o dmg $(SDL_LINK_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-test: ram-test cartridge-test register-test cpu-test
+test: ram-test cartridge-test register-test cpu-test apu-test
 
 ram-test-build: $(RAM_TEST).c $(BUILD_DIR)/ram-debug.o
 	$(CC) $(RAM_TEST).c $(BUILD_DIR)/ram-debug.o -o $(RAM_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
@@ -206,11 +207,18 @@ register-test: register-test-build
 	echo "Register test passed"
 
 cpu-test-build: $(CPU_TEST).c $(BUILD_DIR)/cpu-debug.o $(BUILD_DIR)/register-debug.o $(BUILD_DIR)/mmu-debug.o $(BUILD_DIR)/cartridge-debug.o $(BUILD_DIR)/ram-debug.o $(BUILD_DIR)/vram-debug.o $(BUILD_DIR)/timer-debug.o $(BUILD_DIR)/ppu-debug.o
-	$(CC) $(CPU_TEST).c $(BUILD_DIR)/cpu-debug.o $(BUILD_DIR)/register-debug.o $(BUILD_DIR)/mmu-debug.o $(BUILD_DIR)/cartridge-debug.o $(BUILD_DIR)/ram-debug.o $(BUILD_DIR)/vram-debug.o $(BUILD_DIR)/timer-debug.o $(BUILD_DIR)/ppu-debug.o -o $(CPU_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+	$(CC) $(CPU_TEST).c $(BUILD_DIR)/cpu-debug.o $(BUILD_DIR)/register-debug.o $(BUILD_DIR)/mmu-debug.o $(BUILD_DIR)/cartridge-debug.o $(BUILD_DIR)/ram-debug.o $(BUILD_DIR)/vram-debug.o $(BUILD_DIR)/timer-debug.o $(BUILD_DIR)/ppu-debug.o -o $(CPU_TEST) $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
 cpu-test: cpu-test-build
 	./$(CPU_TEST)
 	echo "CPU test passed"
+
+apu-test-build: $(APU_TEST).c $(BUILD_DIR)/apu-debug.o
+	$(CC) $(APU_TEST).c $(BUILD_DIR)/apu-debug.o -o $(APU_TEST) $(SDL_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+apu-test: apu-test-build
+	./$(APU_TEST)
+	echo "APU test passed"
 
 run: all
 	echo "Running emulator"
@@ -241,6 +249,6 @@ define delete_executables_by_name
 endef
 
 clean:
-	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(REGISTER_TEST) $(CPU_TEST))
+	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(REGISTER_TEST) $(CPU_TEST) $(APU_TEST))
 	rm -rf $(BUILD_DIR)
 	rm -f dmg dmg.exe
