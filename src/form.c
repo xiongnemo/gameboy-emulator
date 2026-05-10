@@ -290,7 +290,7 @@ bool get_joypad_state(struct Form* form)
             case SDLK_LCTRL: config.fast_forward_mode = true; break;
             case SDLK_LALT:
                 config.disable_joypad = !config.disable_joypad;
-                FORM_WARN_PRINT("Joypad %s\n", config.disable_joypad ? "disabled" : "enabled");
+                FORM_INFO_PRINT("Joypad %s\n", config.disable_joypad ? "disabled" : "enabled");
                 break;
 
             // screenshot
