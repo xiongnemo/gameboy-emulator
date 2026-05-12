@@ -57,8 +57,8 @@ extern struct EmulatorConfig config;
     }
 
 // CPU clock speed: 4.194304 MHz
-#define CPU_CLOCK_SPEED 4194304
-#define CPU_M_CYCLE_SPEED (CPU_CLOCK_SPEED / 4)
+#define CPU_CLOCK_SPEED  GB_CPU_DOT_HZ
+#define CPU_M_CYCLE_SPEED GB_M_CYCLE_HZ
 
 // CB Prefix
 #define CB_PREFIX        0xCB
@@ -152,6 +152,9 @@ struct CPU
     // Audio Processing Unit
     struct APU* apu;
 
+    // Pixel Processing Unit
+    struct PPU* ppu;
+
     // serial output
     bool serial_output;
 
@@ -159,9 +162,11 @@ struct CPU
     bool halted;                    // CPU is halted
     bool stopped;                   // CPU is stopped
     bool interrupt_master_enable;   // Interrupt Master Enable flag
+    uint8_t ime_enable_delay;       // Delayed EI countdown in instructions
 
     // Clock management
-    uint32_t cycles;   // Current cycle count
+    uint32_t cycles;                // Current M-cycle count
+    uint16_t dma_stall_m_cycles;    // Remaining coarse OAM DMA stall time
 
     // Op Code
     uint8_t op_code;
@@ -175,6 +180,7 @@ struct CPU
     // Public method pointers
     void (*cpu_attach_timer)(struct CPU* cpu, struct Timer* timer);
     void (*cpu_attach_apu)(struct CPU* cpu, struct APU* apu);
+    void (*cpu_attach_ppu)(struct CPU* cpu, struct PPU* ppu);
     void (*cpu_step_for_cycles)(struct CPU* cpu, int16_t cycles);   // Step for given M-cycles
     uint8_t (*cpu_step_next)(struct CPU*);   // Step next instruction (or interrupt)
 
@@ -250,6 +256,9 @@ void cpu_attach_timer(struct CPU* cpu, struct Timer* timer);
 
 // Attach APU
 void cpu_attach_apu(struct CPU* cpu, struct APU* apu);
+
+// Attach PPU
+void cpu_attach_ppu(struct CPU* cpu, struct PPU* ppu);
 
 // Step for given number of M-cycles
 void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles);

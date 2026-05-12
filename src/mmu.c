@@ -8,6 +8,8 @@ struct MMU* create_mmu(struct Cartridge* cartridge, struct Ram* ram, struct PPU*
     mmu->ppu        = ppu;
     mmu->joypad     = NULL;
     mmu->apu        = NULL;
+    mmu->timer      = NULL;
+    mmu->pending_dma_stall_m_cycles = 0;
     // set method pointers
     mmu->mmu_get_byte = mmu_get_byte;
     mmu->mmu_set_byte = mmu_set_byte;
@@ -15,6 +17,7 @@ struct MMU* create_mmu(struct Cartridge* cartridge, struct Ram* ram, struct PPU*
     mmu->mmu_set_word = mmu_set_word;
     mmu->mmu_attach_joypad = mmu_attach_joypad;
     mmu->mmu_attach_apu = mmu_attach_apu;
+    mmu->mmu_attach_timer = mmu_attach_timer;
     return mmu;
 }
 
@@ -83,18 +86,50 @@ struct AddressTranslationResult translate_address(uint16_t address)
     return result;
 }
 
+static uint8_t mmu_get_joypad_byte(struct MMU* mmu)
+{
+    if (config.disable_joypad) {
+        return 0xFF;
+    }
+
+    uint8_t selection = mmu->ram->get_ram_byte(mmu->ram, JOYPAD_ADDRESS) & 0x30;
+    uint8_t keys      = 0x0F;
+
+    if (mmu->joypad) {
+        bool directions_requested = (selection & 0x10) == 0;
+        bool controls_requested   = (selection & 0x20) == 0;
+
+        if (directions_requested) {
+            keys &= mmu->joypad->keys_directions & 0x0F;
+        }
+        if (controls_requested) {
+            keys &= mmu->joypad->keys_controls & 0x0F;
+        }
+    }
+
+    return 0xC0 | selection | keys;
+}
+
+static void mmu_set_joypad_selection(struct MMU* mmu, uint8_t byte)
+{
+    mmu->ram->set_ram_byte(mmu->ram, JOYPAD_ADDRESS, 0xC0 | (byte & 0x30) | 0x0F);
+}
+
 
 uint8_t mmu_get_byte(struct MMU* mmu, uint16_t address)
 {
-    // effectivly disable joypad
-    if (address == 0xFF00 && config.disable_joypad) {
-        return 0x3F;
+    if (address == JOYPAD_ADDRESS) {
+        return mmu_get_joypad_byte(mmu);
     }
     
     // Handle APU registers (0xFF10-0xFF26, 0xFF30-0xFF3F)
     if (mmu->apu && ((address >= 0xFF10 && address <= 0xFF26) || 
                      (address >= 0xFF30 && address <= 0xFF3F))) {
         return mmu->apu->read_register(mmu->apu, address);
+    }
+
+    if (mmu->timer && address >= TIMER_DIV_ADDRESS && address <= TIMER_TAC_ADDRESS) {
+        return mmu->timer->read_register(mmu->timer, address);
     }
     
     // Handle unusable memory region
@@ -122,6 +157,11 @@ void mmu_attach_apu(struct MMU* mmu, struct APU* apu)
     mmu->apu = apu;
 }
 
+void mmu_attach_timer(struct MMU* mmu, struct Timer* timer)
+{
+    mmu->timer = timer;
+}
+
 void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte)
 {
     // // Block writes to LY register - it's read-only for CPU
@@ -136,20 +176,19 @@ void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte)
         return;
     }
 
-    if (address == 0xFF00) {
-        // controls
-        bool controls_requested = ((byte >> 5) & 1) == 0;
-        bool directions_requested = ((byte >> 4) & 1) == 0;
-        if (controls_requested) {
-            byte = 0x20 + mmu->joypad->keys_controls;
-        }
-        if (directions_requested) {
-            byte = 0x10 + mmu->joypad->keys_directions;
-        }
+    if (mmu->timer && address >= TIMER_DIV_ADDRESS && address <= TIMER_TAC_ADDRESS) {
+        mmu->timer->write_register(mmu->timer, address, byte);
+        return;
+    }
+
+    if (address == JOYPAD_ADDRESS) {
+        mmu_set_joypad_selection(mmu, byte);
+        return;
     }
     
     if (address == 0xFF46) {
         DMA(mmu, byte);
+        mmu->pending_dma_stall_m_cycles = GB_OAM_DMA_M_CYCLES;
         return;
     }
 

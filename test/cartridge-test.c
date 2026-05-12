@@ -25,7 +25,7 @@ int main()
     printf("Cartridge: SUPER MARIOLAND\n");
     printf("=========================\n");
     cartridge = create_cartridge();
-    load_cartridge(cartridge, "test/mario.gb");
+    load_cartridge(cartridge, "roms/marioland.gb");
     assert(strcmp(cartridge_get_rom_name(cartridge), "SUPER MARIOLAND") == 0);
     assert(cartridge->rom_attributes_bank_count == 4);
     assert(cartridge->ram_attributes_bank_count == 0);
@@ -36,7 +36,7 @@ int main()
     printf("Cartridge: ZELDA\n");
     printf("=========================\n");
     cartridge = create_cartridge();
-    load_cartridge(cartridge, "test/zelda.gb");
+    load_cartridge(cartridge, "roms/Zelda.gb");
     assert(strcmp(cartridge_get_rom_name(cartridge), "ZELDA") == 0);
     assert(cartridge->rom_attributes_bank_count == 32);
     assert(cartridge->ram_attributes_bank_count == 1);
@@ -47,7 +47,7 @@ int main()
     printf("Cartridge: BATTLECITY\n");
     printf("=========================\n");
     cartridge = create_cartridge();
-    load_cartridge(cartridge, "test/tank.gb");
+    load_cartridge(cartridge, "roms/tank.gb");
     assert(strcmp(cartridge_get_rom_name(cartridge), "BATTLECITY") == 0);
     assert(cartridge->rom_attributes_bank_count == 2);
     assert(cartridge->ram_attributes_bank_count == 0);

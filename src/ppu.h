@@ -77,14 +77,18 @@ extern struct EmulatorConfig config;
 
 // PPU Mode timing constants
 #define MODE_0_CYCLES_MIN 87    // H-Blank minimum
-#define MODE_0_CYCLES_MAX 204   // H-Blank maximum  
+#define MODE_0_CYCLES_MAX 204   // H-Blank maximum
 #define MODE_1_CYCLES -1        // V-Blank, never used
 #define MODE_2_CYCLES 80        // OAM Scan
 #define MODE_3_CYCLES_MIN 172   // Pixel Transfer minimum
 #define MODE_3_CYCLES_MAX 289   // Pixel Transfer maximum
 
+#define PPU_MODE_2_DOTS 80
+#define PPU_MODE_3_DOTS 172
+#define PPU_MODE_0_DOTS 204
+
 // Total scanline cycles (always 456)
-#define CYCLES_PER_SCANLINE 456
+#define CYCLES_PER_SCANLINE GB_SCANLINE_DOTS
 #define SCANLINES_PER_FRAME 154
 #define VISIBLE_SCANLINES 144
 
@@ -207,7 +211,11 @@ struct PPU
 {
     // Internal state
     uint32_t      ppu_inner_clock;    // clock for a complete screen frame
+    uint16_t      mode_dots;
     enum PPU_MODE mode;               // current mode
+    bool          frame_ready;
+    bool          lcd_enabled;
+    uint64_t      frame_count;
     struct Vram*  vram;               // VRAM
     struct MMU*   mmu;                // only for r/w registers
     struct Form*  form;               // form for drawing
@@ -259,7 +267,7 @@ struct PPU
     // searched sprites
     uint8_t searched_sprite_count;
     // Public method pointers
-    void (*ppu_step)(struct PPU*, uint8_t cycles);
+    void (*ppu_step)(struct PPU*, uint8_t m_cycles);
 };
 
 // Function declarations
@@ -289,6 +297,10 @@ void free_ppu(struct PPU* ppu);
 void ppu_set_mode(struct PPU* self, enum PPU_MODE mode);
 // set LY
 void ppu_set_ly(struct PPU* self, uint8_t ly);
+// step PPU timing by CPU M-cycles
+void ppu_step(struct PPU* self, uint8_t m_cycles);
+// consume a completed emulated frame
+bool ppu_consume_frame_ready(struct PPU* self);
 
 // PPU States
 // OAM Search   

@@ -211,8 +211,12 @@ int main(int argc, char* argv[])
     }
     DMG_DEBUG_PRINT("Attaching ram to timer...%s", "\n");
     timer_attach_ram(timer, ram);
+    DMG_DEBUG_PRINT("Attaching timer to MMU...%s", "\n");
+    mmu_attach_timer(mmu, timer);
     DMG_DEBUG_PRINT("Attaching cpu to timer...%s", "\n");
     cpu_attach_timer(cpu, timer);
+    DMG_DEBUG_PRINT("Attaching PPU to CPU...%s", "\n");
+    cpu_attach_ppu(cpu, ppu);
 
     // bring up apu
     DMG_DEBUG_PRINT("Bringing up APU...%s", "\n");
@@ -297,9 +301,10 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
     // record time for each frame
     double last_time   = get_time_in_seconds();
     double start_time  = last_time;
-    int    frame_count = 1;
-    // Game Boy runs at 1048576 M-cycles / 17556 M-cycles per frame = 59.7275 FPS.
-    float fps = 59.7275f;
+    Uint64 next_frame_deadline_ns = SDL_GetTicksNS();
+    const Uint64 frame_duration_ns =
+        (Uint64)(((uint64_t)SDL_NS_PER_SECOND * GB_FRAME_M_CYCLES) / GB_M_CYCLE_HZ);
+    int frame_count = 1;
 
     while (true) {
         // Process input - if this returns false, exit the loop
@@ -307,7 +312,7 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
             break;
         }
 
-        next_frame(ppu, cpu, frame_count);
+        next_frame(ppu, cpu);
 
         // update surface
         update_surface(form);
@@ -315,17 +320,21 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
         // sleep to maintain fps
         double current_time = get_time_in_seconds();
         double elapsed_time = current_time - last_time;
-        if (elapsed_time < 1.0 / fps && !config.fast_forward_mode) {
-            double          sleep_seconds = 1.0 / fps - elapsed_time;
-            struct timespec sleep_time    = {
-                   .tv_sec  = (time_t)sleep_seconds,
-                   .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1000000000)};
-            nanosleep(&sleep_time, NULL);
+        next_frame_deadline_ns += frame_duration_ns;
+        if (!config.fast_forward_mode) {
+            Uint64 now_ns = SDL_GetTicksNS();
+            if (now_ns < next_frame_deadline_ns) {
+                SDL_DelayPrecise(next_frame_deadline_ns - now_ns);
+            }
+            else {
+                next_frame_deadline_ns = now_ns;
+            }
         }
-        last_time = current_time;
+        double after_sleep_time = get_time_in_seconds();
+        last_time = after_sleep_time;
         if (config.print_debug_info_this_frame) {
             // Calculate FPS
-            double fps_total      = frame_count / (current_time - start_time);
+            double fps_total      = frame_count / (after_sleep_time - start_time);
             double fps_this_frame = 1.0 / elapsed_time;
             DMG_INFO_PRINT("FPS Total: %lf\n", fps_total);
             DMG_INFO_PRINT("FPS This Frame (without sleep): %lf\n", fps_this_frame);
@@ -335,93 +344,10 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
     }
 }
 
-void next_frame(struct PPU* ppu, struct CPU* cpu, int current_frame)
+void next_frame(struct PPU* ppu, struct CPU* cpu)
 {
-    // Check if LCD is disabled
-    while (!ppu_is_lcd_enabled(ppu)) {
-        // When LCD is disabled, set LY to 0 and stay in V-Blank
-        ppu_set_mode(ppu, MODE_VBLANK);
-        ppu_set_ly(ppu, 0);
-        // Execute instructions for a full frame duration (154 scanlines)
-        for (uint8_t i = 0; i < 154; i++) {
-            cpu_step_for_cycles(cpu, 114);
-            // Don't step PPU when LCD is disabled
-        }
-        return;
-    }
-
-    // "Render" 144 visible scanlines (0-143)
-    for (uint8_t ly = 0; ly < 144; ly++) {
-        uint8_t lcdc_current = cpu->mmu->mmu_get_byte(cpu->mmu, LCDC_ADDRESS);
-        // reset interrupt flag
-        // uint8_t int_flag = cpu->mmu->mmu_get_byte(cpu->mmu, IF_ADDRESS);
-        // int_flag &= 0xFC;
-        // cpu->mmu->mmu_set_byte(cpu->mmu, IF_ADDRESS, int_flag);
-        // OAM Scan (Mode 2)
-        // https://hacktix.github.io/GBEDG/ppu/
-        // This mode is entered at the start of every scanline (except for V-Blank) before pixels
-        // are actually drawn to the screen. During this mode the PPU searches OAM memory for
-        // sprites that should be rendered on the current scanline and stores them in a buffer. This
-        // procedure takes a total amount of 80 T-Cycles, meaning that the PPU checks a new OAM
-        // entry every 2 T-Cycles. A sprite is only added to the buffer if all of the following
-        // conditions apply: Sprite X-Position must be greater than 0 LY + 16 must be greater than
-        // or equal to Sprite Y-Position LY + 16 must be less than Sprite Y-Position + Sprite Height
-        // (8 in Normal Mode, 16 in Tall-Sprite-Mode) The amount of sprites already stored in the
-        // OAM Buffer must be less than 10 CPU can't access OAM here
-        ppu_set_ly(ppu, ly);
-        ppu_set_mode(ppu, MODE_OAM_SEARCH);
-        if ((config.fast_forward_mode && current_frame % 4 == 0) || !config.fast_forward_mode) {
-            ppu_oam_search(ppu);  // Actually perform OAM search to populate sprite buffer!
-        }
-        cpu_step_for_cycles(cpu, 20);
-
-        // Pixel Transfer (Mode 3)
-        // https://hacktix.github.io/GBEDG/ppu/
-        // The Drawing Mode is where the PPU transfers pixels to the LCD. The duration of this mode
-        // changes depending on multiple variables, such as background scrolling, the amount of
-        // sprites on the scanline, whether or not the window should be rendered, etc. All of the
-        // specifics to these timing differences will be explained later on. CPU can't access VRAM
-        // and OAM here
-        ppu_set_mode(ppu, MODE_PIXEL_TRANSFER);
-        cpu_step_for_cycles(cpu, 43);
-        if ((config.fast_forward_mode && current_frame % 4 == 0) || !config.fast_forward_mode) {
-            ppu_render_scanline_ly(ppu, ly);
-        }
-        // ppu_render_scanline_fifo(ppu, ly);
-
-        // MODE 0: H-Blank (204 cycles to complete 456 total)
-        // H-Blank (Mode 0)
-        // https://hacktix.github.io/GBEDG/ppu/
-        // This mode takes up the remainder of the scanline after the Drawing Mode finishes, more or
-        // less "padding" the duration of the scanline to a total of 456 T-Cycles. The PPU
-        // effectively pauses during this mode.
-        ppu_set_mode(ppu, MODE_HBLANK);
-        cpu_step_for_cycles(cpu, 51);
-    }
-
-    // V-Blank interrupt happening here
-    uint8_t int_flag = cpu->mmu->mmu_get_byte(cpu->mmu, IF_ADDRESS);
-    int_flag |= 0x01;
-    cpu->mmu->mmu_set_byte(cpu->mmu, IF_ADDRESS, int_flag);
-
-    // ppu_render_full_frame(ppu);
-
-    // V-Blank period: scanlines 144-153 (10 scanlines in MODE 1)
-    // https://hacktix.github.io/GBEDG/ppu/
-    // V-Blank mode is the same as H-Blank in the way that the PPU does not draw any pixels to the
-    // LCD during its duration. However, instead of it taking place at the end of every scanline,
-    // it's a much longer period at the end of every frame. As the Gameboy has a vertical resolution
-    // of 144 pixels, it would be expected that the amount of scanlines the PPU handles would be
-    // equal - 144 scanlines. However, this is not the case. In reality there are 154 scanlines, the
-    // 10 last of which being "pseudo-scanlines" during which no pixels are drawn as the PPU is in
-    // the V-Blank state during their duration. A V-Blank scanline takes the same amount of time as
-    // any other scanline - 456 T-Cycles.
-
-    for (uint8_t ly = 144; ly < 154; ly++) {
-        // MODE 1: V-Blank (456 cycles per scanline)
-        ppu_set_ly(ppu, ly);
-        ppu_set_mode(ppu, MODE_VBLANK);
-        cpu_step_for_cycles(cpu, 114);
+    while (!ppu_consume_frame_ready(ppu)) {
+        cpu_step_for_cycles(cpu, 1);
     }
 }
 

@@ -58,15 +58,18 @@ extern struct EmulatorConfig config;
 struct Timer
 {
     // Data members
-    uint64_t counter;
-    uint64_t divider;
-    uint8_t  reg_div;    // register divider ff04
-    uint8_t  reg_tima;   // counter ff05
-    uint8_t  reg_tma;    // modulator ff06
-    uint8_t  reg_tac;    // control ff07
+    uint16_t divider;              // Internal dot-cycle divider; DIV reads the upper byte.
+    uint8_t  reg_tima;             // timer counter ff05
+    uint8_t  reg_tma;              // timer modulo ff06
+    uint8_t  reg_tac;              // timer control ff07
+    bool     tima_overflow_pending;
+    uint8_t  tima_overflow_dots;
 
     // Method pointers
     void (*add_time)(struct Timer*, uint8_t);
+    void (*step)(struct Timer*, uint8_t);
+    uint8_t (*read_register)(struct Timer*, uint16_t address);
+    void (*write_register)(struct Timer*, uint16_t address, uint8_t value);
     void (*refresh_timer_register)(struct Timer*);
     void (*set_timer_register)(struct Timer*);
 
@@ -76,6 +79,9 @@ struct Timer
 
 // Function declarations
 void          timer_add_time(struct Timer* self, uint8_t cycle);
+void          timer_step(struct Timer* self, uint8_t m_cycles);
+uint8_t       timer_read_register(struct Timer* self, uint16_t address);
+void          timer_write_register(struct Timer* self, uint16_t address, uint8_t value);
 void          timer_refresh_register(struct Timer* self);
 void          timer_set_register(struct Timer* self);
 struct Timer* create_timer(void);

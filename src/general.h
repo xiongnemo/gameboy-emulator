@@ -50,6 +50,16 @@ extern struct EmulatorConfig config;
 
 #define UNDEFINED 0xFF
 
+// Game Boy timing. CPU opcode tables in this emulator use M-cycles.
+#define GB_CPU_DOT_HZ        4194304
+#define GB_DOTS_PER_M_CYCLE  4
+#define GB_M_CYCLE_HZ        (GB_CPU_DOT_HZ / GB_DOTS_PER_M_CYCLE)
+#define GB_SCANLINE_DOTS     456
+#define GB_SCANLINE_M_CYCLES (GB_SCANLINE_DOTS / GB_DOTS_PER_M_CYCLE)
+#define GB_FRAME_DOTS        70224
+#define GB_FRAME_M_CYCLES    (GB_FRAME_DOTS / GB_DOTS_PER_M_CYCLE)
+#define GB_OAM_DMA_M_CYCLES  160
+
 // RAM Registers
 
 #define ZERO_PAGE_ADDRESS 0xFF00

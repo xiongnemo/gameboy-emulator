@@ -52,7 +52,7 @@ extern struct EmulatorConfig config;
 // Game Boy APU constants
 #define APU_SAMPLE_RATE        44100
 #define APU_CHANNELS           2
-#define APU_CPU_M_CYCLE_HZ     1048576
+#define APU_CPU_M_CYCLE_HZ     GB_M_CYCLE_HZ
 #define APU_FRAME_SEQ_PERIOD   2048
 #define APU_RING_BUFFER_FRAMES 4096
 

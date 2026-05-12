@@ -206,45 +206,79 @@ void dump_framebuffer_to_bmp(struct Form* form, const char* filename)
     FORM_INFO_PRINT("Framebuffer dumped to: %s\n", filename);
 }
 
+static void write_surface_pixel(SDL_Surface* surface, int x, int y, Uint32 pixel, int bytes_per_pixel)
+{
+    Uint8* dst = (Uint8*)surface->pixels + (y * surface->pitch) + (x * bytes_per_pixel);
+
+    switch (bytes_per_pixel) {
+    case 1: *dst = (Uint8)pixel; break;
+    case 2:
+    {
+        Uint16 pixel16 = (Uint16)pixel;
+        memcpy(dst, &pixel16, sizeof(pixel16));
+        break;
+    }
+    case 3:
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        dst[0] = (Uint8)((pixel >> 16) & 0xFF);
+        dst[1] = (Uint8)((pixel >> 8) & 0xFF);
+        dst[2] = (Uint8)(pixel & 0xFF);
+#else
+        dst[0] = (Uint8)(pixel & 0xFF);
+        dst[1] = (Uint8)((pixel >> 8) & 0xFF);
+        dst[2] = (Uint8)((pixel >> 16) & 0xFF);
+#endif
+        break;
+    case 4: memcpy(dst, &pixel, sizeof(pixel)); break;
+    default: break;
+    }
+}
+
 void update_surface(struct Form* form)
 {
-    uint32_t* pixels = form->surface->pixels;
+    form->surface = SDL_GetWindowSurface(form->window);
+    if (form->surface == NULL || form->surface->pixels == NULL) {
+        FORM_ERROR_PRINT("Failed to get window surface: %s\n", SDL_GetError());
+        return;
+    }
+
+    int bytes_per_pixel = SDL_BYTESPERPIXEL(form->surface->format);
+    if (bytes_per_pixel < 1 || bytes_per_pixel > 4) {
+        FORM_ERROR_PRINT("Unsupported window surface pixel format: %u\n", form->surface->format);
+        return;
+    }
+
+    bool locked = false;
+    if (SDL_MUSTLOCK(form->surface)) {
+        if (!SDL_LockSurface(form->surface)) {
+            FORM_ERROR_PRINT("Failed to lock window surface: %s\n", SDL_GetError());
+            return;
+        }
+        locked = true;
+    }
+
+    Uint32 palette[4] = {
+        SDL_MapSurfaceRGB(form->surface, 232, 252, 204),
+        SDL_MapSurfaceRGB(form->surface, 172, 212, 144),
+        SDL_MapSurfaceRGB(form->surface, 84,  140, 112),
+        SDL_MapSurfaceRGB(form->surface, 20,  44,  56),
+    };
 
     // Convert GameBoy colors to RGBA with scaling
     for (int y = 0; y < 144; y++) {
         for (int x = 0; x < 160; x++) {
             uint8_t  color = form->framebuffer[y * 160 + x];
-            uint32_t rgb_color;
 
-            // ARGB format
-            switch (color) {
-            case 0:
-                rgb_color = 0xFFE8FCCC;   // RGB(232,252,204) - Game Boy lightest shade (BGRA)
-                // rgb_color = 0xFFFFFFFF;
-                break;
-            case 1:
-                rgb_color = 0xFFACD490;   // RGB(172,212,144) - Game Boy light shade (BGRA)
-                // rgb_color = 0xFFAAAAAA;
-                break;
-            case 2:
-                rgb_color = 0xFF548C70;   // RGB(84,140,112) - Game Boy dark shade (ARGB)
-                // rgb_color = 0xFF444444;
-                break;
-            case 3:
-                rgb_color = 0xFF142C38;   // RGB(20,44,56) - Game Boy darkest shade (ARGB)
-                // rgb_color = 0xFF000000;
-                break;
-            default:
-            {
+            if (color > 3) {
                 static int unexpected_color_count = 0;
                 unexpected_color_count++;
                 if (unexpected_color_count <= 10) {
                     printf("DEBUG: Unexpected color value: %d at position [%d,%d]\n", color, x, y);
                 }
+                color &= 0x03;
             }
-                rgb_color = 0xFF0000FF;   // Blue for debugging unexpected values
-                break;
-            }
+
+            Uint32 rgb_color = palette[color];
 
             // Scale the pixel for the 2x window size
             for (int dy = 0; dy < config.scale_factor; dy++) {
@@ -252,7 +286,8 @@ void update_surface(struct Form* form)
                     int pixel_x = x * config.scale_factor + dx;
                     int pixel_y = y * config.scale_factor + dy;
                     if (pixel_x < form->surface->w && pixel_y < form->surface->h) {
-                        pixels[pixel_y * (form->surface->pitch / 4) + pixel_x] = rgb_color;
+                        write_surface_pixel(
+                            form->surface, pixel_x, pixel_y, rgb_color, bytes_per_pixel);
                     }
                 }
             }
@@ -262,12 +297,91 @@ void update_surface(struct Form* form)
     // Dump framebuffer to BMP file (uncomment to enable)
     // dump_framebuffer_to_bmp(form, "gameboy_screen.bmp");
 
+    if (locked) {
+        SDL_UnlockSurface(form->surface);
+    }
     SDL_UpdateWindowSurface(form->window);
 }
 
 void set_framebuffer(struct Form* form)
 {
     form->framebuffer = form->ppu->framebuffer;
+}
+
+static void request_joypad_interrupt(struct Form* form)
+{
+    if (!form || !form->joypad || !form->joypad->mmu) {
+        return;
+    }
+
+    uint8_t interrupt_flag = form->joypad->mmu->mmu_get_byte(form->joypad->mmu, IF_ADDRESS);
+    form->joypad->mmu->mmu_set_byte(form->joypad->mmu, IF_ADDRESS, interrupt_flag | INT_JOYPAD);
+}
+
+static bool keyboard_pressed(const bool* keyboard, int key_count, SDL_Scancode scancode)
+{
+    return scancode >= 0 && scancode < key_count && keyboard[scancode];
+}
+
+static void update_joypad_from_keyboard(struct Form* form)
+{
+    if (!form || !form->joypad) {
+        return;
+    }
+
+    int         key_count = 0;
+    const bool* keyboard  = SDL_GetKeyboardState(&key_count);
+    if (!keyboard) {
+        return;
+    }
+
+    uint8_t old_directions = form->joypad->keys_directions;
+    uint8_t old_controls   = form->joypad->keys_controls;
+    uint8_t directions     = 0x0F;
+    uint8_t controls       = 0x0F;
+
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_D) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_RIGHT)) {
+        directions &= (uint8_t)~0x01;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_A) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_LEFT)) {
+        directions &= (uint8_t)~0x02;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_W) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_UP)) {
+        directions &= (uint8_t)~0x04;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_S) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_DOWN)) {
+        directions &= (uint8_t)~0x08;
+    }
+
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_J) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_Z)) {
+        controls &= (uint8_t)~0x01;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_K) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_X)) {
+        controls &= (uint8_t)~0x02;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_LSHIFT) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_RSHIFT)) {
+        controls &= (uint8_t)~0x04;
+    }
+    if (keyboard_pressed(keyboard, key_count, SDL_SCANCODE_RETURN) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_RETURN2) ||
+        keyboard_pressed(keyboard, key_count, SDL_SCANCODE_KP_ENTER)) {
+        controls &= (uint8_t)~0x08;
+    }
+
+    form->joypad->keys_directions = directions;
+    form->joypad->keys_controls   = controls;
+
+    if (((old_directions & (uint8_t)~directions) != 0) ||
+        ((old_controls & (uint8_t)~controls) != 0)) {
+        request_joypad_interrupt(form);
+    }
 }
 
 bool get_joypad_state(struct Form* form)
@@ -288,10 +402,6 @@ bool get_joypad_state(struct Form* form)
             case SDLK_ESCAPE: FORM_INFO_PRINT("Quit requested by user.\n"); return false;
             case SDLK_P: config.print_debug_info_this_frame = true; break;
             case SDLK_LCTRL: config.fast_forward_mode = true; break;
-            case SDLK_LALT:
-                config.disable_joypad = !config.disable_joypad;
-                FORM_INFO_PRINT("Joypad %s\n", config.disable_joypad ? "disabled" : "enabled");
-                break;
 
             // screenshot
             case SDLK_F1: dump_framebuffer_to_bmp(form, "gameboy_framebuffer.bmp"); break;
@@ -299,36 +409,44 @@ bool get_joypad_state(struct Form* form)
             // Direction keys - clear corresponding bit when pressed (0=pressed)
             case SDLK_D:                                // RIGHT (bit 0)
                 form->joypad->keys_directions &= 0xE;   // Clear bit 0: 1110
+                request_joypad_interrupt(form);
                 break;
 
             case SDLK_A:                                // LEFT (bit 1)
                 form->joypad->keys_directions &= 0xD;   // Clear bit 1: 1101
+                request_joypad_interrupt(form);
                 break;
 
             case SDLK_W:                                // UP (bit 2)
                 form->joypad->keys_directions &= 0xB;   // Clear bit 2: 1011
+                request_joypad_interrupt(form);
                 break;
 
             case SDLK_S:                                // DOWN (bit 3)
                 form->joypad->keys_directions &= 0x7;   // Clear bit 3: 0111
+                request_joypad_interrupt(form);
                 break;
 
             // Control keys - clear corresponding bit when pressed (0=pressed)
             case SDLK_J:                              // A (bit 0)
                 form->joypad->keys_controls &= 0xE;   // Clear bit 0: 1110
+                request_joypad_interrupt(form);
                 break;
 
             // case SDLK_SPACE:
             case SDLK_K:                              // B (bit 1)
                 form->joypad->keys_controls &= 0xD;   // Clear bit 1: 1101
+                request_joypad_interrupt(form);
                 break;
 
             case SDLK_LSHIFT:                         // SELECT (bit 2)
                 form->joypad->keys_controls &= 0xB;   // Clear bit 2: 1011
+                request_joypad_interrupt(form);
                 break;
 
             case SDLK_RETURN:                         // START (bit 3)
                 form->joypad->keys_controls &= 0x7;   // Clear bit 3: 0111
+                request_joypad_interrupt(form);
                 break;
 
             // Special functions
@@ -356,6 +474,12 @@ bool get_joypad_state(struct Form* form)
         else if (form->event->type == SDL_EVENT_KEY_UP) {
             switch (form->event->key.key) {
             case SDLK_LCTRL: config.fast_forward_mode = false; break;
+            case SDLK_LALT:
+                if (config.debug_mode) {
+                    config.disable_joypad = !config.disable_joypad;
+                    FORM_INFO_PRINT("Joypad %s\n", config.disable_joypad ? "disabled" : "enabled");
+                }
+                break;
             // Direction keys - set corresponding bit when released (1=not pressed)
             case SDLK_D:                                // RIGHT (bit 0)
                 form->joypad->keys_directions |= 0x1;   // Set bit 0
@@ -496,7 +620,6 @@ bool get_joypad_state(struct Form* form)
         // }
     }
 
-    // Update joypad state and trigger interrupts
-    // form->joypad->handle_joypad_input(form->joypad);
+    update_joypad_from_keyboard(form);
     return true;
 }

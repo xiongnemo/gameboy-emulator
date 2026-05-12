@@ -82,6 +82,8 @@ struct MMU
     struct PPU*       ppu;
     struct Joypad*    joypad;
     struct APU*       apu;
+    struct Timer*     timer;
+    uint16_t          pending_dma_stall_m_cycles;
 
     // Public method pointers
     uint8_t (*mmu_get_byte)(struct MMU*, uint16_t address);
@@ -90,6 +92,7 @@ struct MMU
     void (*mmu_set_word)(struct MMU*, uint16_t address, uint16_t word);
     void (*mmu_attach_joypad)(struct MMU* mmu, struct Joypad* joypad);
     void (*mmu_attach_apu)(struct MMU* mmu, struct APU* apu);
+    void (*mmu_attach_timer)(struct MMU* mmu, struct Timer* timer);
 };
 
 // Function declarations
@@ -113,5 +116,7 @@ void DMA(struct MMU* mmu, uint8_t source_bank);
 void mmu_attach_joypad(struct MMU* mmu, struct Joypad* joypad);
 // Attach APU
 void mmu_attach_apu(struct MMU* mmu, struct APU* apu);
+// Attach timer
+void mmu_attach_timer(struct MMU* mmu, struct Timer* timer);
 
 #endif

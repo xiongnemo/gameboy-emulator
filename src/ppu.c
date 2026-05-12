@@ -9,7 +9,11 @@ struct PPU* create_ppu(struct Vram* vram)
 
     // Initialize state
     ppu->ppu_inner_clock  = 0;
+    ppu->mode_dots        = 0;
     ppu->mode             = MODE_OAM_SEARCH;   // Start in OAM scan mode
+    ppu->frame_ready      = false;
+    ppu->lcd_enabled      = true;
+    ppu->frame_count      = 0;
     ppu->vram             = vram;
     ppu->framebuffer      = (uint8_t*)malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint8_t));
     if (ppu->framebuffer == NULL) {
@@ -47,7 +51,7 @@ struct PPU* create_ppu(struct Vram* vram)
     // Initialize default register values
     ppu->ly = 0;
     ppu->lcdc = 0xA1;  // LCD & BG enabled by default (with tile data from 0x8000)
-    ppu->stat = 0;
+    ppu->stat = MODE_OAM_SEARCH;
     ppu->scx = 0;
     ppu->scy = 0;
     ppu->wy = 0;
@@ -59,6 +63,7 @@ struct PPU* create_ppu(struct Vram* vram)
     ppu->tile_data_base_address = 0x9000;
 
     // Initialize public method pointers
+    ppu->ppu_step = ppu_step;
 
     return ppu;
 }
@@ -93,9 +98,136 @@ bool ppu_is_lcd_enabled(struct PPU* self)
     return (lcdc & LCDC_ENABLE) != 0;
 }
 
+static void ppu_request_vblank_interrupt(struct PPU* self)
+{
+    uint8_t int_flag = self->mmu->mmu_get_byte(self->mmu, IF_ADDRESS);
+    int_flag |= INT_VBLANK;
+    self->mmu->mmu_set_byte(self->mmu, IF_ADDRESS, int_flag);
+}
+
+static void ppu_enter_mode(struct PPU* self, enum PPU_MODE mode)
+{
+    self->mode      = mode;
+    self->mode_dots = 0;
+    ppu_set_mode(self, mode);
+}
+
+static void ppu_step_lcd_disabled(struct PPU* self)
+{
+    if (self->lcd_enabled) {
+        self->lcd_enabled    = false;
+        self->ppu_inner_clock = 0;
+        self->mode_dots       = 0;
+        ppu_enter_mode(self, MODE_VBLANK);
+    }
+
+    ppu_set_ly(self, 0);
+
+    self->ppu_inner_clock++;
+    if (self->ppu_inner_clock >= GB_FRAME_DOTS) {
+        self->ppu_inner_clock -= GB_FRAME_DOTS;
+        self->frame_ready = true;
+        self->frame_count++;
+    }
+}
+
+static void ppu_finish_visible_scanline(struct PPU* self)
+{
+    uint8_t ly = self->mmu->mmu_get_byte(self->mmu, LY_ADDRESS);
+    if (ly < VISIBLE_SCANLINES) {
+        ppu_render_scanline_ly(self, ly);
+    }
+}
+
+static void ppu_step_one_dot(struct PPU* self)
+{
+    if (!ppu_is_lcd_enabled(self)) {
+        ppu_step_lcd_disabled(self);
+        return;
+    }
+
+    if (!self->lcd_enabled) {
+        self->lcd_enabled     = true;
+        self->ppu_inner_clock = 0;
+        self->mode_dots       = 0;
+        ppu_set_ly(self, 0);
+        ppu_enter_mode(self, MODE_OAM_SEARCH);
+    }
+
+    self->ppu_inner_clock++;
+    self->mode_dots++;
+
+    switch (self->mode) {
+    case MODE_OAM_SEARCH:
+        if (self->mode_dots >= PPU_MODE_2_DOTS) {
+            ppu_oam_search(self);
+            ppu_enter_mode(self, MODE_PIXEL_TRANSFER);
+        }
+        break;
+    case MODE_PIXEL_TRANSFER:
+        if (self->mode_dots >= PPU_MODE_3_DOTS) {
+            ppu_finish_visible_scanline(self);
+            ppu_enter_mode(self, MODE_HBLANK);
+        }
+        break;
+    case MODE_HBLANK:
+        if (self->mode_dots >= PPU_MODE_0_DOTS) {
+            uint8_t next_ly = (uint8_t)(self->mmu->mmu_get_byte(self->mmu, LY_ADDRESS) + 1);
+            ppu_set_ly(self, next_ly);
+            if (next_ly == VISIBLE_SCANLINES) {
+                ppu_request_vblank_interrupt(self);
+                ppu_enter_mode(self, MODE_VBLANK);
+            }
+            else {
+                ppu_enter_mode(self, MODE_OAM_SEARCH);
+            }
+        }
+        break;
+    case MODE_VBLANK:
+        if (self->mode_dots >= GB_SCANLINE_DOTS) {
+            uint8_t ly = self->mmu->mmu_get_byte(self->mmu, LY_ADDRESS);
+            if (ly >= SCANLINES_PER_FRAME - 1) {
+                ppu_set_ly(self, 0);
+                ppu_enter_mode(self, MODE_OAM_SEARCH);
+                self->ppu_inner_clock = 0;
+                self->frame_ready = true;
+                self->frame_count++;
+            }
+            else {
+                ppu_set_ly(self, (uint8_t)(ly + 1));
+                self->mode_dots = 0;
+            }
+        }
+        break;
+    }
+}
+
+void ppu_step(struct PPU* self, uint8_t m_cycles)
+{
+    if (!self || !self->mmu || m_cycles == 0) {
+        return;
+    }
+
+    uint16_t dots = (uint16_t)m_cycles * GB_DOTS_PER_M_CYCLE;
+    for (uint16_t i = 0; i < dots; i++) {
+        ppu_step_one_dot(self);
+    }
+}
+
+bool ppu_consume_frame_ready(struct PPU* self)
+{
+    if (!self || !self->frame_ready) {
+        return false;
+    }
+
+    self->frame_ready = false;
+    return true;
+}
+
 
 void ppu_set_mode(struct PPU* self, enum PPU_MODE mode)
 {
+    self->mode = mode;
     // Read current STAT register
     uint8_t stat = self->mmu->mmu_get_byte(self->mmu, STAT_ADDRESS);
     // Update mode bits (preserve upper bits)

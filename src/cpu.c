@@ -1059,6 +1059,7 @@ struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
     cpu->mmu                    = mmu;
     cpu->timer                  = NULL;
     cpu->apu                    = NULL;
+    cpu->ppu                    = NULL;
     cpu->opcode_cycle_main      = opcode_cycle_main;
     cpu->opcode_cycle_prefix_cb = opcode_cycle_prefix_cb;
 
@@ -1066,10 +1067,15 @@ struct CPU* create_cpu(struct Registers* registers, struct MMU* mmu)
     cpu->halted                  = false;
     cpu->stopped                 = false;
     cpu->interrupt_master_enable = false;
+    cpu->ime_enable_delay        = 0;
+    cpu->serial_output           = false;
+    cpu->cycles                  = 0;
+    cpu->dma_stall_m_cycles      = 0;
 
     // set method pointers
     cpu->cpu_attach_timer    = cpu_attach_timer;
     cpu->cpu_attach_apu      = cpu_attach_apu;
+    cpu->cpu_attach_ppu      = cpu_attach_ppu;
     cpu->cpu_step_for_cycles = cpu_step_for_cycles;
     cpu->cpu_step_next       = cpu_step_next;
 
@@ -1163,7 +1169,7 @@ uint8_t handle_interrupts(struct CPU* cpu)
 
     // jump to interrupt address
     cpu->registers->set_control_register(cpu->registers, PC, interrupt_address);
-    return 4;
+    return 5;
 }
 
 void cpu_attach_timer(struct CPU* cpu, struct Timer* timer)
@@ -1176,6 +1182,46 @@ void cpu_attach_apu(struct CPU* cpu, struct APU* apu)
     cpu->apu = apu;
 }
 
+void cpu_attach_ppu(struct CPU* cpu, struct PPU* ppu)
+{
+    cpu->ppu = ppu;
+}
+
+static void cpu_latch_pending_dma_stall(struct CPU* cpu)
+{
+    if (!cpu->mmu || cpu->mmu->pending_dma_stall_m_cycles == 0) {
+        return;
+    }
+
+    cpu->dma_stall_m_cycles += cpu->mmu->pending_dma_stall_m_cycles;
+    cpu->mmu->pending_dma_stall_m_cycles = 0;
+}
+
+static void cpu_advance_time(struct CPU* cpu, uint8_t m_cycles)
+{
+    cpu->cycles += m_cycles;
+    if (cpu->timer) {
+        timer_step(cpu->timer, m_cycles);
+    }
+    if (cpu->apu && cpu->apu->step) {
+        cpu->apu->step(cpu->apu, m_cycles);
+    }
+    if (cpu->ppu && cpu->ppu->ppu_step) {
+        cpu->ppu->ppu_step(cpu->ppu, m_cycles);
+    }
+}
+
+static void cpu_finish_instruction(struct CPU* cpu)
+{
+    if (cpu->ime_enable_delay > 0) {
+        cpu->ime_enable_delay--;
+        if (cpu->ime_enable_delay == 0) {
+            cpu->interrupt_master_enable = true;
+        }
+    }
+    cpu_latch_pending_dma_stall(cpu);
+}
+
 void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles)
 {
     while (cycles > 0) {
@@ -1184,18 +1230,18 @@ void cpu_step_for_cycles(struct CPU* cpu, int16_t cycles)
             return;
         }
         cycles -= cycles_to_step;
-        cpu->cycles += cycles_to_step;
-        if (cpu->timer) {
-            cpu->timer->add_time(cpu->timer, cycles_to_step);
-        }
-        if (cpu->apu && cpu->apu->step) {
-            cpu->apu->step(cpu->apu, cycles_to_step);
-        }
+        cpu_advance_time(cpu, cycles_to_step);
     }
     return;
 }
 uint8_t cpu_step_next(struct CPU* cpu)
 {
+    cpu_latch_pending_dma_stall(cpu);
+    if (cpu->dma_stall_m_cycles > 0) {
+        cpu->dma_stall_m_cycles--;
+        return 1;
+    }
+
     // 0. serial output
     if (cpu->serial_output) {
         if (cpu->mmu->mmu_get_byte(cpu->mmu, 0xFF02) == 0x81) {
@@ -1207,6 +1253,7 @@ uint8_t cpu_step_next(struct CPU* cpu)
     // 1. Check interrupts
     uint8_t interrupt_cycles = handle_interrupts(cpu);
     if (interrupt_cycles) {
+        cpu->ime_enable_delay = 0;
         return interrupt_cycles;
     }
 
@@ -1216,7 +1263,9 @@ uint8_t cpu_step_next(struct CPU* cpu)
     }
 
     // 3. step next instruction
-    return cpu_step(cpu);
+    uint8_t instruction_cycles = cpu_step(cpu);
+    cpu_finish_instruction(cpu);
+    return instruction_cycles;
 }
 
 uint8_t cpu_step_read_byte(struct CPU* cpu)
@@ -1262,10 +1311,12 @@ uint8_t cpu_step_execute_op_code(struct CPU* cpu, uint8_t op_byte)
 uint8_t cpu_step_execute_main(struct CPU* cpu, uint8_t op_byte)
 {
     CPU_TRACE_PRINT("Executing Op Code: 0x%02X\n", op_byte);
-    struct PackedInstructionParam* param = &cpu->instruction_table[op_byte];
-    param->fn(cpu, &param->param);
-    if (param->param.result_is_alternative) {
-        return param->cycles_alternative;
+    struct PackedInstructionParam* packed = &cpu->instruction_table[op_byte];
+    struct InstructionParam        param  = packed->param;
+    param.result_is_alternative          = false;
+    packed->fn(cpu, &param);
+    if (param.result_is_alternative) {
+        return packed->cycles_alternative;
     }
     return cpu->opcode_cycle_main[op_byte];
 }
@@ -1281,8 +1332,10 @@ uint8_t cpu_step_execute_prefix_cb(struct CPU* cpu)
 uint8_t cpu_step_execute_cb_op_code(struct CPU* cpu, uint8_t op_byte)
 {
     CPU_TRACE_PRINT("Executing CB Op Code: 0xCB%02X\n", op_byte);
-    struct PackedInstructionParam* param = &cpu->instruction_table_cb[op_byte];
-    param->fn(cpu, &param->param);
+    struct PackedInstructionParam* packed = &cpu->instruction_table_cb[op_byte];
+    struct InstructionParam        param  = packed->param;
+    param.result_is_alternative          = false;
+    packed->fn(cpu, &param);
     return cpu->opcode_cycle_prefix_cb[op_byte] + CB_PREFIX_CYCLES;
 }
 
@@ -1770,6 +1823,7 @@ EXECUTABLE_INSTRUCTION(reti)
     cpu->registers->set_control_register(cpu->registers, PC, address);
     // Enable interrupts
     cpu->interrupt_master_enable = true;
+    cpu->ime_enable_delay        = 0;
 }
 
 void rst(struct CPU* cpu, uint16_t n)
@@ -1906,11 +1960,12 @@ EXECUTABLE_INSTRUCTION(stop)
 EXECUTABLE_INSTRUCTION(di)
 {
     cpu->interrupt_master_enable = false;
+    cpu->ime_enable_delay        = 0;
 }
 
 EXECUTABLE_INSTRUCTION(ei)
 {
-    cpu->interrupt_master_enable = true;
+    cpu->ime_enable_delay = 2;
 }
 
 EXECUTABLE_INSTRUCTION(ld_sp_plus_imm_to_hl)
