@@ -11,15 +11,21 @@ A pure C (C with class, if you may say) rework of https://github.com/xiongnemo/n
 ### Cartridge (MBC)
 
 * ROM switching: working
-
-* External RAM: implemented, but seems not implemented correctly. Exist in the code but not used (Refer to `mmu.c`).
+* External RAM: working with battery save support
 
 * MBC Implemented:
-  * MBC1 (Address lines may not be correct)
-  * MBC2 (Not tested)
-  * MBC3
-  * MBC5 (Not tested)
-  * Rumble Carts
+  * **ROM ONLY** - Basic cartridges with optional RAM
+  * **MBC1** - ROM/RAM banking with two banking modes
+  * **MBC2** - Built-in 512x4bit RAM
+  * **MBC3** - ROM/RAM banking with Real-Time Clock (RTC) support
+  * **MBC5** - Extended ROM banking (up to 512 banks) with rumble support
+  * **HuC1** - Treated as MBC1 compatible
+
+* Features:
+  * Battery saves (.sav files) - automatic save/load for cartridges with battery-backed RAM
+  * RTC persistence (.rtc files) - saves/restores real-time clock state for MBC3 games
+  * Rumble motor support - detects and tracks rumble state for MBC5 rumble cartridges
+  * Automatic flush - battery saves written every 60 frames and on exit
 
 ### PPU
 
@@ -36,47 +42,76 @@ A pure C (C with class, if you may say) rework of https://github.com/xiongnemo/n
 
 ### APU
 
-* APU exists (callback driven) but the speed is roughly 2 to 6 times as fast as the emulation speed.
+* **Channel 1** (Square with sweep) - working
+* **Channel 2** (Square) - working  
+* **Channel 3** (Wave) - working with programmable wave RAM
+* **Channel 4** (Noise) - working with LFSR
+* **Mixer** - stereo panning and volume control working
+* **Frame sequencer** - length counter, volume envelope, and sweep working
+* Audio output via SDL3 audio stream with ring buffer
 
-### Screenshots
+### Screenshots (Tests)
 
 #### CPU Instructions
 
-![CPU Instructions](./screenshots/cpu_instr.bmp)
+![CPU Instructions](image/README/cpu_instr.bmp)
+
+#### Little Sound Dj Test
+![Little Sound Dj](image/README/lsdj_1.png)
+
+
+#### rtc3test (not passed, but shows RTC state changes)
+
+![1778668582755](image/README/1778668582755.png)
+
+![1778668721983](image/README/1778668721983.png)
+
+![1778668798481](image/README/1778668798481.png)
+
+### Screenshots (Gameplay)
 
 #### The Legend of Zelda: Link's Awakening
 
-![Zelda](./screenshots/Zelda.bmp)
+![Zelda](image/README/Zelda.bmp)
 
 #### Kirby's Dream Land (USA)
 
-![Kirby's Dream Land (USA)](./screenshots/Kirby.png)
+![Kirby's Dream Land (USA)](image/README/Kirby.png)
 
 #### Kirby's Dream Land 2 (USA)
 
-![Kirby's Dream Land 2 (USA)](./screenshots/Kirby2.bmp)
+![Kirby's Dream Land 2 (USA)](image/README/Kirby2.bmp)
 
 #### Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)
 
-![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](./screenshots/MARIOLAND2.png)
+![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](image/README/MARIOLAND2.png)
 
-![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](./screenshots/MARIOLAND2.bmp)
+![Super Mario Land 2 - 6 Golden Coins (USA) (Rev-B)](image/README/MARIOLAND2.bmp)
 
 #### Pokemon Blue (MBC3)
 
-![Pokemon Blue](./screenshots/pokemon_blue.bmp)
+![Pokemon Blue](image/README/pokemon_blue.bmp)
 
-![Pokemon Blue](./screenshots/pokemon_blue.png)
+![Pokemon Blue](image/README/pokemon_blue.png)
 
-![Pokemon Blue](./screenshots/pokemon_blue_1.bmp)
+![Pokemon Blue](image/README/pokemon_blue_1.bmp)
 
-![Pokemon Blue](./screenshots/pokemon_blue_2.bmp)
+![Pokemon Blue](image/README/pokemon_blue_2.bmp)
 
 #### Harvest Moon GB
 
-![Harvest Moon GB](./screenshots/harvest_moon.png)
+![Harvest Moon GB](image/README/harvest_moon.png)
 
-![Harvest Moon GB](./screenshots/harvest_moon.bmp)
+![Harvest Moon GB](image/README/harvest_moon.bmp)
+
+#### Pokemon Yellow (MBC5+RAM+BATTERY (0x1b))
+![Pokemon Yellow](image/README/pokemon_yellow.png)
+
+![Pokemon Yellow](image/README/pokemon_yellow_1.png)
+
+#### Little Sound Dj (MBC5+RAM+BATTERY (0x1b))
+
+![Little Sound Dj](image/README/lsdj_2.png)
 
 ## Development
 
@@ -167,6 +202,9 @@ S - Down
 D - Right
 J - A
 K - B
+Q - Quick Save
+Y - Quick Load
+T - Quick Save and exit
 LSHIFT - SELECT
 ENTER - START
 ESC - Quit
@@ -183,6 +221,8 @@ LCTRL - Fast forward
 [cboy](https://github.com/0xf4b1/cboy)
 
 Blargg's test ROMs and source code
+
+[game-boy-test-roms](https://github.com/c-sp/game-boy-test-roms)
 
 [gbops](https://izik1.github.io/gbops/index.html)
 

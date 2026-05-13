@@ -540,15 +540,21 @@ bool cartridge_load_battery_save(struct Cartridge* cartridge)
     uint8_t* data = cartridge_battery_ram_data(cartridge);
 
     if (size > 0 && data && cartridge->save_path) {
+        CARTRIDGE_DEBUG_PRINT("Attempting to load battery save from: %s (%zu bytes)\n", cartridge->save_path, size);
         FILE* file = fopen(cartridge->save_path, "rb");
         if (file) {
-            fread(data, 1, size, file);
+            size_t bytes_read = fread(data, 1, size, file);
             fclose(file);
             CARTRIDGE_INFO_PRINT("Loaded battery save: %s\n", cartridge->save_path);
+            CARTRIDGE_DEBUG_PRINT("Successfully read %zu bytes from battery save\n", bytes_read);
+        }
+        else {
+            CARTRIDGE_DEBUG_PRINT("No existing battery save found at: %s\n", cartridge->save_path);
         }
     }
 
     if (cartridge->features.has_timer && cartridge->rtc_path) {
+        CARTRIDGE_DEBUG_PRINT("Attempting to load RTC state from: %s\n", cartridge->rtc_path);
         FILE* file = fopen(cartridge->rtc_path, "rb");
         if (file) {
             char header[8] = {0};
@@ -556,8 +562,15 @@ bool cartridge_load_battery_save(struct Cartridge* cartridge)
                 memcmp(header, "DGBRTC1", 7) == 0) {
                 fread(cartridge->rtc_registers, 1, sizeof(cartridge->rtc_registers), file);
                 fread(&cartridge->rtc_last_update, 1, sizeof(cartridge->rtc_last_update), file);
+                CARTRIDGE_DEBUG_PRINT("Successfully loaded RTC state\n");
+            }
+            else {
+                CARTRIDGE_DEBUG_PRINT("Invalid or missing RTC header in: %s\n", cartridge->rtc_path);
             }
             fclose(file);
+        }
+        else {
+            CARTRIDGE_DEBUG_PRINT("No existing RTC save found at: %s\n", cartridge->rtc_path);
         }
     }
 
@@ -571,24 +584,42 @@ bool cartridge_flush_battery_save(struct Cartridge* cartridge)
         return true;
     }
     if (!cartridge->ram_dirty && !cartridge->features.has_timer) {
+        CARTRIDGE_TRACE_PRINT("Skipping battery save flush (RAM not dirty, no timer)\n");
         return true;
     }
+
+    CARTRIDGE_DEBUG_PRINT("Flushing battery save (ram_dirty=%d, has_timer=%d)\n",
+                          cartridge->ram_dirty, cartridge->features.has_timer);
 
     bool ok = true;
     size_t size = cartridge_battery_ram_size(cartridge);
     uint8_t* data = cartridge_battery_ram_data(cartridge);
 
     if (size > 0 && data && cartridge->save_path) {
+        CARTRIDGE_DEBUG_PRINT("Writing battery save to: %s (%zu bytes)\n", cartridge->save_path, size);
         ok = write_file_atomically(cartridge->save_path, data, size) && ok;
+        if (ok) {
+            CARTRIDGE_DEBUG_PRINT("Successfully wrote battery save\n");
+        }
+        else {
+            CARTRIDGE_DEBUG_PRINT("Failed to write battery save\n");
+        }
     }
 
     if (cartridge->features.has_timer && cartridge->rtc_path) {
+        CARTRIDGE_DEBUG_PRINT("Writing RTC state to: %s\n", cartridge->rtc_path);
         rtc_update(cartridge);
         uint8_t rtc_blob[8 + 5 + sizeof(time_t)] = {0};
         memcpy(rtc_blob, "DGBRTC1", 7);
         memcpy(rtc_blob + 8, cartridge->rtc_registers, sizeof(cartridge->rtc_registers));
         memcpy(rtc_blob + 8 + 5, &cartridge->rtc_last_update, sizeof(time_t));
         ok = write_file_atomically(cartridge->rtc_path, rtc_blob, sizeof(rtc_blob)) && ok;
+        if (ok) {
+            CARTRIDGE_DEBUG_PRINT("Successfully wrote RTC state\n");
+        }
+        else {
+            CARTRIDGE_DEBUG_PRINT("Failed to write RTC state\n");
+        }
     }
 
     if (ok) {

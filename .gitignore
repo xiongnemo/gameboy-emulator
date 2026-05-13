@@ -1,6 +1,9 @@
+states/
+
 SDL*
 test/nemo*
 test/*-test
+test/game-boy-test-roms-v7.0/
 test/cpu_instrs/
 *.gb
 *.log
