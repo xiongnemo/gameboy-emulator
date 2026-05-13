@@ -575,6 +575,7 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
     const Uint64 frame_duration_ns =
         (Uint64)(((uint64_t)SDL_NS_PER_SECOND * GB_FRAME_M_CYCLES) / GB_M_CYCLE_HZ);
     int frame_count = 1;
+    static bool was_fast_forward = false;
 
     while (true) {
         // Process input - if this returns false, exit the loop
@@ -602,13 +603,18 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
         next_frame_deadline_ns += frame_duration_ns;
         if (!config.fast_forward_mode) {
             Uint64 now_ns = SDL_GetTicksNS();
-            if (now_ns < next_frame_deadline_ns) {
+            if (was_fast_forward) {
+                // Just exited fast-forward, reset deadline to avoid catch-up delay
+                next_frame_deadline_ns = now_ns + frame_duration_ns;
+            }
+            else if (now_ns < next_frame_deadline_ns) {
                 SDL_DelayPrecise(next_frame_deadline_ns - now_ns);
             }
             else {
                 next_frame_deadline_ns = now_ns;
             }
         }
+        was_fast_forward = config.fast_forward_mode;
         double after_sleep_time = get_time_in_seconds();
         last_time = after_sleep_time;
         if (config.print_debug_info_this_frame) {
