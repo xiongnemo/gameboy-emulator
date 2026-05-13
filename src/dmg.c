@@ -1,5 +1,275 @@
 #include "dmg.h"
 
+#ifdef _WIN32
+#    include <direct.h>
+#    define DMG_MKDIR(path) _mkdir(path)
+#else
+#    include <sys/stat.h>
+#    define DMG_MKDIR(path) mkdir(path, 0755)
+#endif
+
+#define SAVE_STATE_VERSION 1
+
+struct SaveStateHeader
+{
+    char     magic[8];
+    uint32_t version;
+    uint64_t rom_hash;
+};
+
+static bool write_block(FILE* file, const void* data, size_t size)
+{
+    return fwrite(data, 1, size, file) == size;
+}
+
+static bool read_block(FILE* file, void* data, size_t size)
+{
+    return fread(data, 1, size, file) == size;
+}
+
+static char* save_state_path(struct Cartridge* cartridge, uint8_t slot)
+{
+    if (!cartridge) {
+        return NULL;
+    }
+
+    DMG_MKDIR("states");
+
+    char dir[64];
+    snprintf(dir, sizeof(dir), "states/%016llx", (unsigned long long)cartridge->rom_hash);
+    DMG_MKDIR(dir);
+
+    size_t length = strlen(dir) + 24;
+    char* path = malloc(length);
+    if (!path) {
+        return NULL;
+    }
+    snprintf(path, length, "%s/slot%u.state", dir, slot);
+    return path;
+}
+
+static bool save_quick_state(struct CPU* cpu, struct Timer* timer, struct PPU* ppu, struct APU* apu, uint8_t slot)
+{
+    if (!cpu || !cpu->mmu || !timer || !ppu) {
+        return false;
+    }
+
+    struct Cartridge* cartridge = cpu->mmu->cartridge;
+    char* path = save_state_path(cartridge, slot);
+    if (!path) {
+        return false;
+    }
+
+    FILE* file = fopen(path, "wb");
+    if (!file) {
+        free(path);
+        return false;
+    }
+
+    struct SaveStateHeader header = {{'D', 'M', 'G', 'S', 'T', 'A', 'T', 'E'}, SAVE_STATE_VERSION, cartridge->rom_hash};
+    bool ok = true;
+    ok = write_block(file, &header, sizeof(header)) && ok;
+
+    ok = write_block(file, cpu->registers->reg_primary, sizeof(cpu->registers->reg_primary)) && ok;
+    ok = write_block(file, cpu->registers->reg_control, sizeof(cpu->registers->reg_control)) && ok;
+    ok = write_block(file, &cpu->halted, sizeof(cpu->halted)) && ok;
+    ok = write_block(file, &cpu->stopped, sizeof(cpu->stopped)) && ok;
+    ok = write_block(file, &cpu->interrupt_master_enable, sizeof(cpu->interrupt_master_enable)) && ok;
+    ok = write_block(file, &cpu->ime_enable_delay, sizeof(cpu->ime_enable_delay)) && ok;
+    ok = write_block(file, &cpu->cycles, sizeof(cpu->cycles)) && ok;
+    ok = write_block(file, &cpu->dma_stall_m_cycles, sizeof(cpu->dma_stall_m_cycles)) && ok;
+    ok = write_block(file, &cpu->mmu->pending_dma_stall_m_cycles, sizeof(cpu->mmu->pending_dma_stall_m_cycles)) && ok;
+
+    ok = write_block(file, cpu->mmu->ram->ram_byte, RAM_SIZE) && ok;
+    ok = write_block(file, ppu->vram->vram_byte, VRAM_SIZE) && ok;
+    ok = write_block(file, ppu->framebuffer, SCREEN_WIDTH * SCREEN_HEIGHT) && ok;
+
+    ok = write_block(file, &ppu->ppu_inner_clock, sizeof(ppu->ppu_inner_clock)) && ok;
+    ok = write_block(file, &ppu->mode_dots, sizeof(ppu->mode_dots)) && ok;
+    ok = write_block(file, &ppu->mode, sizeof(ppu->mode)) && ok;
+    ok = write_block(file, &ppu->frame_ready, sizeof(ppu->frame_ready)) && ok;
+    ok = write_block(file, &ppu->lcd_enabled, sizeof(ppu->lcd_enabled)) && ok;
+    ok = write_block(file, &ppu->frame_count, sizeof(ppu->frame_count)) && ok;
+    ok = write_block(file, &ppu->ly, sizeof(ppu->ly)) && ok;
+    ok = write_block(file, &ppu->lcdc, sizeof(ppu->lcdc)) && ok;
+    ok = write_block(file, &ppu->stat, sizeof(ppu->stat)) && ok;
+    ok = write_block(file, &ppu->scx, sizeof(ppu->scx)) && ok;
+    ok = write_block(file, &ppu->scy, sizeof(ppu->scy)) && ok;
+    ok = write_block(file, &ppu->lyc, sizeof(ppu->lyc)) && ok;
+    ok = write_block(file, &ppu->wy, sizeof(ppu->wy)) && ok;
+    ok = write_block(file, &ppu->wx, sizeof(ppu->wx)) && ok;
+    ok = write_block(file, &ppu->bgp, sizeof(ppu->bgp)) && ok;
+    ok = write_block(file, &ppu->obp0, sizeof(ppu->obp0)) && ok;
+    ok = write_block(file, &ppu->obp1, sizeof(ppu->obp1)) && ok;
+
+    ok = write_block(file, &timer->divider, sizeof(timer->divider)) && ok;
+    ok = write_block(file, &timer->reg_tima, sizeof(timer->reg_tima)) && ok;
+    ok = write_block(file, &timer->reg_tma, sizeof(timer->reg_tma)) && ok;
+    ok = write_block(file, &timer->reg_tac, sizeof(timer->reg_tac)) && ok;
+    ok = write_block(file, &timer->tima_overflow_pending, sizeof(timer->tima_overflow_pending)) && ok;
+    ok = write_block(file, &timer->tima_overflow_dots, sizeof(timer->tima_overflow_dots)) && ok;
+
+    if (apu) {
+        ok = write_block(file, &apu->square1, sizeof(apu->square1)) && ok;
+        ok = write_block(file, &apu->square2, sizeof(apu->square2)) && ok;
+        ok = write_block(file, &apu->wave, sizeof(apu->wave)) && ok;
+        ok = write_block(file, &apu->noise, sizeof(apu->noise)) && ok;
+        ok = write_block(file, &apu->frame_sequencer_step, sizeof(apu->frame_sequencer_step)) && ok;
+        ok = write_block(file, &apu->frame_sequencer_counter, sizeof(apu->frame_sequencer_counter)) && ok;
+        ok = write_block(file, &apu->sound_enabled, sizeof(apu->sound_enabled)) && ok;
+        ok = write_block(file, &apu->left_volume, sizeof(apu->left_volume)) && ok;
+        ok = write_block(file, &apu->right_volume, sizeof(apu->right_volume)) && ok;
+    }
+
+    ok = write_block(file, &cartridge->ram_enabled, sizeof(cartridge->ram_enabled)) && ok;
+    ok = write_block(file, &cartridge->mbc2_ram_enabled, sizeof(cartridge->mbc2_ram_enabled)) && ok;
+    ok = write_block(file, cartridge->mbc2_ram, sizeof(cartridge->mbc2_ram)) && ok;
+    ok = write_block(file, &cartridge->mbc1_rom_bank_low5, sizeof(cartridge->mbc1_rom_bank_low5)) && ok;
+    ok = write_block(file, &cartridge->mbc1_bank_high2, sizeof(cartridge->mbc1_bank_high2)) && ok;
+    ok = write_block(file, &cartridge->mbc1_banking_mode, sizeof(cartridge->mbc1_banking_mode)) && ok;
+    ok = write_block(file, &cartridge->rom_alternative_bank, sizeof(cartridge->rom_alternative_bank)) && ok;
+    ok = write_block(file, &cartridge->ram_alternative_bank, sizeof(cartridge->ram_alternative_bank)) && ok;
+    ok = write_block(file, &cartridge->mbc5_rom_bank, sizeof(cartridge->mbc5_rom_bank)) && ok;
+    ok = write_block(file, &cartridge->rumble_motor_on, sizeof(cartridge->rumble_motor_on)) && ok;
+    ok = write_block(file, &cartridge->rtc_selected_register, sizeof(cartridge->rtc_selected_register)) && ok;
+    ok = write_block(file, cartridge->rtc_registers, sizeof(cartridge->rtc_registers)) && ok;
+    ok = write_block(file, cartridge->rtc_latched_registers, sizeof(cartridge->rtc_latched_registers)) && ok;
+    ok = write_block(file, &cartridge->rtc_latched, sizeof(cartridge->rtc_latched)) && ok;
+    ok = write_block(file, &cartridge->rtc_latch_previous, sizeof(cartridge->rtc_latch_previous)) && ok;
+    ok = write_block(file, &cartridge->rtc_last_update, sizeof(cartridge->rtc_last_update)) && ok;
+    size_t ram_size = cartridge->ram_size;
+    ok = write_block(file, &ram_size, sizeof(ram_size)) && ok;
+    if (ram_size > 0 && cartridge->ram_data) {
+        ok = write_block(file, cartridge->ram_data, ram_size) && ok;
+    }
+
+    ok = fclose(file) == 0 && ok;
+    FORM_INFO_PRINT("Saved state slot %u: %s\n", slot, path);
+    free(path);
+    return ok;
+}
+
+static bool load_quick_state(struct CPU* cpu, struct Timer* timer, struct PPU* ppu, struct APU* apu, uint8_t slot)
+{
+    if (!cpu || !cpu->mmu || !timer || !ppu) {
+        return false;
+    }
+
+    struct Cartridge* cartridge = cpu->mmu->cartridge;
+    char* path = save_state_path(cartridge, slot);
+    if (!path) {
+        return false;
+    }
+
+    FILE* file = fopen(path, "rb");
+    if (!file) {
+        FORM_WARN_PRINT("No save state slot %u found\n", slot);
+        free(path);
+        return false;
+    }
+
+    struct SaveStateHeader header;
+    bool ok = read_block(file, &header, sizeof(header));
+    if (!ok || memcmp(header.magic, "DMGSTATE", 8) != 0 ||
+        header.version != SAVE_STATE_VERSION || header.rom_hash != cartridge->rom_hash) {
+        fclose(file);
+        free(path);
+        return false;
+    }
+
+    ok = read_block(file, cpu->registers->reg_primary, sizeof(cpu->registers->reg_primary)) && ok;
+    ok = read_block(file, cpu->registers->reg_control, sizeof(cpu->registers->reg_control)) && ok;
+    ok = read_block(file, &cpu->halted, sizeof(cpu->halted)) && ok;
+    ok = read_block(file, &cpu->stopped, sizeof(cpu->stopped)) && ok;
+    ok = read_block(file, &cpu->interrupt_master_enable, sizeof(cpu->interrupt_master_enable)) && ok;
+    ok = read_block(file, &cpu->ime_enable_delay, sizeof(cpu->ime_enable_delay)) && ok;
+    ok = read_block(file, &cpu->cycles, sizeof(cpu->cycles)) && ok;
+    ok = read_block(file, &cpu->dma_stall_m_cycles, sizeof(cpu->dma_stall_m_cycles)) && ok;
+    ok = read_block(file, &cpu->mmu->pending_dma_stall_m_cycles, sizeof(cpu->mmu->pending_dma_stall_m_cycles)) && ok;
+
+    ok = read_block(file, cpu->mmu->ram->ram_byte, RAM_SIZE) && ok;
+    ok = read_block(file, ppu->vram->vram_byte, VRAM_SIZE) && ok;
+    ok = read_block(file, ppu->framebuffer, SCREEN_WIDTH * SCREEN_HEIGHT) && ok;
+
+    ok = read_block(file, &ppu->ppu_inner_clock, sizeof(ppu->ppu_inner_clock)) && ok;
+    ok = read_block(file, &ppu->mode_dots, sizeof(ppu->mode_dots)) && ok;
+    ok = read_block(file, &ppu->mode, sizeof(ppu->mode)) && ok;
+    ok = read_block(file, &ppu->frame_ready, sizeof(ppu->frame_ready)) && ok;
+    ok = read_block(file, &ppu->lcd_enabled, sizeof(ppu->lcd_enabled)) && ok;
+    ok = read_block(file, &ppu->frame_count, sizeof(ppu->frame_count)) && ok;
+    ok = read_block(file, &ppu->ly, sizeof(ppu->ly)) && ok;
+    ok = read_block(file, &ppu->lcdc, sizeof(ppu->lcdc)) && ok;
+    ok = read_block(file, &ppu->stat, sizeof(ppu->stat)) && ok;
+    ok = read_block(file, &ppu->scx, sizeof(ppu->scx)) && ok;
+    ok = read_block(file, &ppu->scy, sizeof(ppu->scy)) && ok;
+    ok = read_block(file, &ppu->lyc, sizeof(ppu->lyc)) && ok;
+    ok = read_block(file, &ppu->wy, sizeof(ppu->wy)) && ok;
+    ok = read_block(file, &ppu->wx, sizeof(ppu->wx)) && ok;
+    ok = read_block(file, &ppu->bgp, sizeof(ppu->bgp)) && ok;
+    ok = read_block(file, &ppu->obp0, sizeof(ppu->obp0)) && ok;
+    ok = read_block(file, &ppu->obp1, sizeof(ppu->obp1)) && ok;
+
+    ok = read_block(file, &timer->divider, sizeof(timer->divider)) && ok;
+    ok = read_block(file, &timer->reg_tima, sizeof(timer->reg_tima)) && ok;
+    ok = read_block(file, &timer->reg_tma, sizeof(timer->reg_tma)) && ok;
+    ok = read_block(file, &timer->reg_tac, sizeof(timer->reg_tac)) && ok;
+    ok = read_block(file, &timer->tima_overflow_pending, sizeof(timer->tima_overflow_pending)) && ok;
+    ok = read_block(file, &timer->tima_overflow_dots, sizeof(timer->tima_overflow_dots)) && ok;
+
+    if (apu) {
+        ok = read_block(file, &apu->square1, sizeof(apu->square1)) && ok;
+        ok = read_block(file, &apu->square2, sizeof(apu->square2)) && ok;
+        ok = read_block(file, &apu->wave, sizeof(apu->wave)) && ok;
+        ok = read_block(file, &apu->noise, sizeof(apu->noise)) && ok;
+        ok = read_block(file, &apu->frame_sequencer_step, sizeof(apu->frame_sequencer_step)) && ok;
+        ok = read_block(file, &apu->frame_sequencer_counter, sizeof(apu->frame_sequencer_counter)) && ok;
+        ok = read_block(file, &apu->sound_enabled, sizeof(apu->sound_enabled)) && ok;
+        ok = read_block(file, &apu->left_volume, sizeof(apu->left_volume)) && ok;
+        ok = read_block(file, &apu->right_volume, sizeof(apu->right_volume)) && ok;
+        apu->sample_read_index = 0;
+        apu->sample_write_index = 0;
+        apu->sample_count = 0;
+        apu->sample_cycle_accumulator = 0;
+    }
+
+    ok = read_block(file, &cartridge->ram_enabled, sizeof(cartridge->ram_enabled)) && ok;
+    ok = read_block(file, &cartridge->mbc2_ram_enabled, sizeof(cartridge->mbc2_ram_enabled)) && ok;
+    ok = read_block(file, cartridge->mbc2_ram, sizeof(cartridge->mbc2_ram)) && ok;
+    ok = read_block(file, &cartridge->mbc1_rom_bank_low5, sizeof(cartridge->mbc1_rom_bank_low5)) && ok;
+    ok = read_block(file, &cartridge->mbc1_bank_high2, sizeof(cartridge->mbc1_bank_high2)) && ok;
+    ok = read_block(file, &cartridge->mbc1_banking_mode, sizeof(cartridge->mbc1_banking_mode)) && ok;
+    ok = read_block(file, &cartridge->rom_alternative_bank, sizeof(cartridge->rom_alternative_bank)) && ok;
+    ok = read_block(file, &cartridge->ram_alternative_bank, sizeof(cartridge->ram_alternative_bank)) && ok;
+    ok = read_block(file, &cartridge->mbc5_rom_bank, sizeof(cartridge->mbc5_rom_bank)) && ok;
+    ok = read_block(file, &cartridge->rumble_motor_on, sizeof(cartridge->rumble_motor_on)) && ok;
+    ok = read_block(file, &cartridge->rtc_selected_register, sizeof(cartridge->rtc_selected_register)) && ok;
+    ok = read_block(file, cartridge->rtc_registers, sizeof(cartridge->rtc_registers)) && ok;
+    ok = read_block(file, cartridge->rtc_latched_registers, sizeof(cartridge->rtc_latched_registers)) && ok;
+    ok = read_block(file, &cartridge->rtc_latched, sizeof(cartridge->rtc_latched)) && ok;
+    ok = read_block(file, &cartridge->rtc_latch_previous, sizeof(cartridge->rtc_latch_previous)) && ok;
+    ok = read_block(file, &cartridge->rtc_last_update, sizeof(cartridge->rtc_last_update)) && ok;
+
+    size_t saved_ram_size = 0;
+    ok = read_block(file, &saved_ram_size, sizeof(saved_ram_size)) && ok;
+    if (saved_ram_size > 0 && saved_ram_size == cartridge->ram_size && cartridge->ram_data) {
+        ok = read_block(file, cartridge->ram_data, saved_ram_size) && ok;
+        cartridge->ram_dirty = true;
+    }
+    else if (saved_ram_size > 0) {
+        ok = false;
+    }
+
+    fclose(file);
+    if (ok) {
+        ppu_write_register(ppu, LCDC_ADDRESS, ppu->lcdc);
+        ppu_write_register(ppu, STAT_ADDRESS, ppu->stat);
+        ppu_set_ly(ppu, ppu->ly);
+        FORM_INFO_PRINT("Loaded state slot %u: %s\n", slot, path);
+    }
+    free(path);
+    return ok;
+}
+
 void show_usage(const char* program_name)
 {
     printf("Usage: %s [options] <rom_file>\n", program_name);
@@ -312,6 +582,15 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
             break;
         }
 
+        if (form && form->joypad && form->joypad->save_flag) {
+            save_quick_state(cpu, timer, ppu, apu, 0);
+            form->joypad->save_flag = 0;
+        }
+        if (form && form->joypad && form->joypad->load_flag) {
+            load_quick_state(cpu, timer, ppu, apu, 0);
+            form->joypad->load_flag = 0;
+        }
+
         next_frame(ppu, cpu);
 
         // update surface
@@ -340,7 +619,14 @@ void main_loop(struct PPU* ppu, struct CPU* cpu, struct Timer* timer, struct For
             DMG_INFO_PRINT("FPS This Frame (without sleep): %lf\n", fps_this_frame);
             config.print_debug_info_this_frame = false;
         }
+        if ((frame_count % 60) == 0 && cpu && cpu->mmu && cpu->mmu->cartridge) {
+            cartridge_flush_battery_save(cpu->mmu->cartridge);
+        }
         frame_count += 1;
+    }
+
+    if (cpu && cpu->mmu && cpu->mmu->cartridge) {
+        cartridge_flush_battery_save(cpu->mmu->cartridge);
     }
 }
 

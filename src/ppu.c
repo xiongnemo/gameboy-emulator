@@ -1,5 +1,12 @@
 #include "ppu.h"
 
+static void ppu_store_register(struct PPU* self, uint16_t address, uint8_t value)
+{
+    if (self && self->mmu && self->mmu->ram) {
+        self->mmu->ram->set_ram_byte(self->mmu->ram, address, value);
+    }
+}
+
 struct PPU* create_ppu(struct Vram* vram)
 {
     struct PPU* ppu = (struct PPU*)malloc(sizeof(struct PPU));
@@ -54,6 +61,7 @@ struct PPU* create_ppu(struct Vram* vram)
     ppu->stat = MODE_OAM_SEARCH;
     ppu->scx = 0;
     ppu->scy = 0;
+    ppu->lyc = 0;
     ppu->wy = 0;
     ppu->wx = 0;
     ppu->bgp = 0xE4;   // Default palette (11 10 01 00) - inverted for GB
@@ -94,8 +102,7 @@ void ppu_attach_form(struct PPU* self, struct Form* form)
 
 bool ppu_is_lcd_enabled(struct PPU* self)
 {
-    uint8_t lcdc = self->mmu->mmu_get_byte(self->mmu, LCDC_ADDRESS);
-    return (lcdc & LCDC_ENABLE) != 0;
+    return self && (self->lcdc & LCDC_ENABLE) != 0;
 }
 
 static void ppu_request_vblank_interrupt(struct PPU* self)
@@ -110,6 +117,32 @@ static void ppu_enter_mode(struct PPU* self, enum PPU_MODE mode)
     self->mode      = mode;
     self->mode_dots = 0;
     ppu_set_mode(self, mode);
+}
+
+static void ppu_apply_lcdc_write(struct PPU* self, uint8_t value)
+{
+    bool was_enabled = (self->lcdc & LCDC_ENABLE) != 0;
+    bool now_enabled = (value & LCDC_ENABLE) != 0;
+
+    self->lcdc = value;
+    ppu_store_register(self, LCDC_ADDRESS, value);
+
+    if (was_enabled && !now_enabled) {
+        self->lcd_enabled     = false;
+        self->ppu_inner_clock = 0;
+        self->mode_dots       = 0;
+        ppu_set_ly(self, 0);
+        ppu_enter_mode(self, MODE_VBLANK);
+        return;
+    }
+
+    if (!was_enabled && now_enabled) {
+        self->lcd_enabled     = true;
+        self->ppu_inner_clock = 0;
+        self->mode_dots       = 0;
+        ppu_set_ly(self, 0);
+        ppu_enter_mode(self, MODE_OAM_SEARCH);
+    }
 }
 
 static void ppu_step_lcd_disabled(struct PPU* self)
@@ -224,16 +257,95 @@ bool ppu_consume_frame_ready(struct PPU* self)
     return true;
 }
 
+uint8_t ppu_read_register(struct PPU* self, uint16_t address)
+{
+    if (!self) {
+        return 0xFF;
+    }
+
+    switch (address) {
+    case LCDC_ADDRESS: return self->lcdc;
+    case STAT_ADDRESS: return self->stat | 0x80;
+    case SCY_ADDRESS: return self->scy;
+    case SCX_ADDRESS: return self->scx;
+    case LY_ADDRESS: return self->ly;
+    case LYC_ADDRESS: return self->lyc;
+    case BGP_ADDRESS: return self->bgp;
+    case OBP0_ADDRESS: return self->obp0;
+    case OBP1_ADDRESS: return self->obp1;
+    case WY_ADDRESS: return self->wy;
+    case WX_ADDRESS: return self->wx;
+    default:
+        return self->mmu && self->mmu->ram ? self->mmu->ram->get_ram_byte(self->mmu->ram, address) : 0xFF;
+    }
+}
+
+void ppu_write_register(struct PPU* self, uint16_t address, uint8_t value)
+{
+    if (!self) {
+        return;
+    }
+
+    switch (address) {
+    case LCDC_ADDRESS:
+        ppu_apply_lcdc_write(self, value);
+        break;
+    case STAT_ADDRESS:
+        self->stat = (value & 0xF8) | (self->stat & 0x07);
+        ppu_store_register(self, STAT_ADDRESS, self->stat);
+        break;
+    case SCY_ADDRESS:
+        self->scy = value;
+        ppu_store_register(self, SCY_ADDRESS, value);
+        break;
+    case SCX_ADDRESS:
+        self->scx = value;
+        ppu_store_register(self, SCX_ADDRESS, value);
+        break;
+    case LY_ADDRESS:
+        // LY is read-only from the CPU side; PPU timing owns it.
+        break;
+    case LYC_ADDRESS:
+        self->lyc = value;
+        ppu_store_register(self, LYC_ADDRESS, value);
+        ppu_set_ly(self, self->ly);
+        break;
+    case BGP_ADDRESS:
+        self->bgp = value;
+        ppu_store_register(self, BGP_ADDRESS, value);
+        break;
+    case OBP0_ADDRESS:
+        self->obp0 = value;
+        ppu_store_register(self, OBP0_ADDRESS, value);
+        break;
+    case OBP1_ADDRESS:
+        self->obp1 = value;
+        ppu_store_register(self, OBP1_ADDRESS, value);
+        break;
+    case WY_ADDRESS:
+        self->wy = value;
+        ppu_store_register(self, WY_ADDRESS, value);
+        break;
+    case WX_ADDRESS:
+        self->wx = value;
+        ppu_store_register(self, WX_ADDRESS, value);
+        break;
+    default:
+        ppu_store_register(self, address, value);
+        break;
+    }
+}
+
 
 void ppu_set_mode(struct PPU* self, enum PPU_MODE mode)
 {
     self->mode = mode;
     // Read current STAT register
-    uint8_t stat = self->mmu->mmu_get_byte(self->mmu, STAT_ADDRESS);
+    uint8_t stat = self->stat;
     // Update mode bits (preserve upper bits)
     stat = (stat & ~STAT_MODE_MASK) | mode;
-    // Write back to memory
-    self->mmu->mmu_set_byte(self->mmu, STAT_ADDRESS, stat);
+    self->stat = stat;
+    ppu_store_register(self, STAT_ADDRESS, stat);
     
     // Check for STAT mode interrupts
     bool trigger_stat_int = false;
@@ -334,11 +446,10 @@ void ppu_unpack_sprite_entry(
 void ppu_set_ly(struct PPU* self, uint8_t ly)
 {
     self->ly = ly;
-    self->mmu->mmu_set_byte(self->mmu, LY_ADDRESS, ly);
+    ppu_store_register(self, LY_ADDRESS, ly);
     // check lyc
-    uint8_t lyc_byte  = self->mmu->mmu_get_byte(self->mmu, LYC_ADDRESS);
-    uint8_t stat_byte  = self->mmu->mmu_get_byte(self->mmu, STAT_ADDRESS);
-    if (ly == lyc_byte) {
+    uint8_t stat_byte  = self->stat;
+    if (ly == self->lyc) {
         stat_byte |= STAT_LYC_EQUAL;
         if (stat_byte & STAT_LYC_INT) {
             uint8_t int_flag = self->mmu->mmu_get_byte(self->mmu, IF_ADDRESS);
@@ -350,7 +461,8 @@ void ppu_set_ly(struct PPU* self, uint8_t ly)
         stat_byte &= ~STAT_LYC_EQUAL;
     }
 
-    self->mmu->mmu_set_byte(self->mmu, STAT_ADDRESS, stat_byte);
+    self->stat = stat_byte;
+    ppu_store_register(self, STAT_ADDRESS, stat_byte);
 }
 
 // Render single scanline with given ly parameter

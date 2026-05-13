@@ -245,6 +245,34 @@ static void test_ppu_lcd_disable_resets_ly_from_vblank(void)
     destroy_timing_system(&system);
 }
 
+static void test_ppu_registers_are_owned_by_ppu(void)
+{
+    struct TimingSystem system = create_timing_system();
+    struct CPU*         cpu    = system.cpu;
+    struct PPU*         ppu    = system.ppu;
+
+    ppu_set_ly(ppu, 42);
+    cpu->mmu->mmu_set_byte(cpu->mmu, LY_ADDRESS, 99);
+    assert(cpu->mmu->mmu_get_byte(cpu->mmu, LY_ADDRESS) == 42);
+
+    ppu_set_mode(ppu, MODE_PIXEL_TRANSFER);
+    cpu->mmu->mmu_set_byte(cpu->mmu, STAT_ADDRESS, 0x78);
+    assert((cpu->mmu->mmu_get_byte(cpu->mmu, STAT_ADDRESS) & STAT_MODE_MASK) == MODE_PIXEL_TRANSFER);
+    assert((cpu->mmu->mmu_get_byte(cpu->mmu, STAT_ADDRESS) & 0x78) == 0x78);
+
+    cpu->mmu->mmu_set_byte(cpu->mmu, LYC_ADDRESS, 42);
+    assert((cpu->mmu->mmu_get_byte(cpu->mmu, STAT_ADDRESS) & STAT_LYC_EQUAL) != 0);
+
+    cpu->mmu->mmu_set_byte(cpu->mmu, SCX_ADDRESS, 0x12);
+    cpu->mmu->mmu_set_byte(cpu->mmu, SCY_ADDRESS, 0x34);
+    cpu->mmu->mmu_set_byte(cpu->mmu, BGP_ADDRESS, 0xE4);
+    assert(ppu->scx == 0x12);
+    assert(ppu->scy == 0x34);
+    assert(ppu->bgp == 0xE4);
+
+    destroy_timing_system(&system);
+}
+
 static void test_dma_stall_advances_peripherals(void)
 {
     struct TimingSystem system = create_timing_system();
@@ -300,6 +328,7 @@ int main(void)
     test_tima_frequencies_and_overflow();
     test_ppu_frame_timing();
     test_ppu_lcd_disable_resets_ly_from_vblank();
+    test_ppu_registers_are_owned_by_ppu();
     test_dma_stall_advances_peripherals();
     test_joypad_register_reads_live_key_state();
 

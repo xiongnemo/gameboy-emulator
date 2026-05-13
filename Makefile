@@ -21,6 +21,8 @@ CC_RELEASE_FLAGS=-O3
 CC_DEBUG_FLAGS=-g -DDEBUG
 
 # Source files
+GENERAL_HEADER=src/general.h
+
 RAM_SRC=src/ram.c
 RAM_HEADER=src/ram.h
 
@@ -78,6 +80,7 @@ DMG_OBJS=$(DMG_OBJ) $(MMU_OBJ) $(TIMER_OBJ) $(CPU_OBJ) $(PPU_OBJ) $(CARTRIDGE_OB
 FORM_TEST=test/nemo-sdl-create-form
 RAM_TEST=test/ram-test
 CARTRIDGE_TEST=test/cartridge-test
+CARTRIDGE_MBC_TEST=test/cartridge-mbc-test
 REGISTER_TEST=test/register-test
 CPU_TEST=test/cpu-test
 APU_TEST=test/apu-test
@@ -90,77 +93,77 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # Object file rules
-$(RAM_OBJ): $(RAM_SRC) $(RAM_HEADER) | $(BUILD_DIR)
+$(RAM_OBJ): $(RAM_SRC) $(RAM_HEADER) $(GENERAL_HEADER) $(CARTRIDGE_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(RAM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(VRAM_OBJ): $(VRAM_SRC) $(VRAM_HEADER) | $(BUILD_DIR)
+$(VRAM_OBJ): $(VRAM_SRC) $(VRAM_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(VRAM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(CARTRIDGE_OBJ): $(CARTRIDGE_SRC) $(CARTRIDGE_HEADER) | $(BUILD_DIR)
+$(CARTRIDGE_OBJ): $(CARTRIDGE_SRC) $(CARTRIDGE_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(CARTRIDGE_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(DMG_OBJ): $(DMG_SRC) $(DMG_HEADER) | $(BUILD_DIR)
+$(DMG_OBJ): $(DMG_SRC) $(DMG_HEADER) $(APU_HEADER) $(CPU_HEADER) $(FORM_HEADER) $(MMU_HEADER) $(PPU_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(DMG_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(MMU_OBJ): $(MMU_SRC) $(MMU_HEADER) | $(BUILD_DIR)
+$(MMU_OBJ): $(MMU_SRC) $(MMU_HEADER) $(APU_HEADER) $(CARTRIDGE_HEADER) $(JOYPAD_HEADER) $(PPU_HEADER) $(RAM_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(MMU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(TIMER_OBJ): $(TIMER_SRC) $(TIMER_HEADER) | $(BUILD_DIR)
+$(TIMER_OBJ): $(TIMER_SRC) $(TIMER_HEADER) $(RAM_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(TIMER_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(CPU_OBJ): $(CPU_SRC) $(CPU_HEADER) | $(BUILD_DIR)
+$(CPU_OBJ): $(CPU_SRC) $(CPU_HEADER) $(APU_HEADER) $(MMU_HEADER) $(PPU_HEADER) $(REGISTER_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(CPU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(REGISTER_OBJ): $(REGISTER_SRC) $(REGISTER_HEADER) | $(BUILD_DIR)
+$(REGISTER_OBJ): $(REGISTER_SRC) $(REGISTER_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(REGISTER_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(PPU_OBJ): $(PPU_SRC) $(PPU_HEADER) | $(BUILD_DIR)
+$(PPU_OBJ): $(PPU_SRC) $(PPU_HEADER) $(MMU_HEADER) $(VRAM_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(PPU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(FORM_OBJ): $(FORM_SRC) $(FORM_HEADER) | $(BUILD_DIR)
+$(FORM_OBJ): $(FORM_SRC) $(FORM_HEADER) $(JOYPAD_HEADER) $(PPU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(FORM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(JOYPAD_OBJ): $(JOYPAD_SRC) $(JOYPAD_HEADER) | $(BUILD_DIR)
+$(JOYPAD_OBJ): $(JOYPAD_SRC) $(JOYPAD_HEADER) $(MMU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(JOYPAD_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
-$(APU_OBJ): $(APU_SRC) $(APU_HEADER) | $(BUILD_DIR)
+$(APU_OBJ): $(APU_SRC) $(APU_HEADER) $(MMU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(APU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_RELEASE_FLAGS)
 
 # Debug object file rules
-$(BUILD_DIR)/ram-debug.o: $(RAM_SRC) $(RAM_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/ram-debug.o: $(RAM_SRC) $(RAM_HEADER) $(GENERAL_HEADER) $(CARTRIDGE_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(RAM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/vram-debug.o: $(VRAM_SRC) $(VRAM_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/vram-debug.o: $(VRAM_SRC) $(VRAM_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(VRAM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/cartridge-debug.o: $(CARTRIDGE_SRC) $(CARTRIDGE_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/cartridge-debug.o: $(CARTRIDGE_SRC) $(CARTRIDGE_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(CARTRIDGE_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/dmg-debug.o: $(DMG_SRC) $(DMG_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/dmg-debug.o: $(DMG_SRC) $(DMG_HEADER) $(APU_HEADER) $(CPU_HEADER) $(FORM_HEADER) $(MMU_HEADER) $(PPU_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(DMG_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/mmu-debug.o: $(MMU_SRC) $(MMU_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/mmu-debug.o: $(MMU_SRC) $(MMU_HEADER) $(APU_HEADER) $(CARTRIDGE_HEADER) $(JOYPAD_HEADER) $(PPU_HEADER) $(RAM_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(MMU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/timer-debug.o: $(TIMER_SRC) $(TIMER_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/timer-debug.o: $(TIMER_SRC) $(TIMER_HEADER) $(RAM_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(TIMER_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/cpu-debug.o: $(CPU_SRC) $(CPU_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/cpu-debug.o: $(CPU_SRC) $(CPU_HEADER) $(APU_HEADER) $(MMU_HEADER) $(PPU_HEADER) $(REGISTER_HEADER) $(TIMER_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(CPU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/register-debug.o: $(REGISTER_SRC) $(REGISTER_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/register-debug.o: $(REGISTER_SRC) $(REGISTER_HEADER) $(GENERAL_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(REGISTER_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/ppu-debug.o: $(PPU_SRC) $(PPU_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/ppu-debug.o: $(PPU_SRC) $(PPU_HEADER) $(MMU_HEADER) $(VRAM_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(PPU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/form-debug.o: $(FORM_SRC) $(FORM_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/form-debug.o: $(FORM_SRC) $(FORM_HEADER) $(JOYPAD_HEADER) $(PPU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(FORM_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/joypad-debug.o: $(JOYPAD_SRC) $(JOYPAD_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/joypad-debug.o: $(JOYPAD_SRC) $(JOYPAD_HEADER) $(MMU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(JOYPAD_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-$(BUILD_DIR)/apu-debug.o: $(APU_SRC) $(APU_HEADER) | $(BUILD_DIR)
+$(BUILD_DIR)/apu-debug.o: $(APU_SRC) $(APU_HEADER) $(MMU_HEADER) | $(BUILD_DIR)
 	$(CC) -c $(APU_SRC) -o $@ $(SDL_INCLUDE_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
 # Debug object files collection
@@ -184,7 +187,7 @@ windows-release: $(DMG_OBJS)
 debug: $(DMG_DEBUG_OBJS)
 	$(CC) $(DMG_DEBUG_OBJS) -o dmg $(SDL_LINK_FLAGS) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
 
-test: ram-test cartridge-test register-test cpu-test apu-test timing-test
+test: ram-test cartridge-test cartridge-mbc-test register-test cpu-test apu-test timing-test
 
 ram-test-build: $(RAM_TEST).c $(BUILD_DIR)/ram-debug.o
 	$(CC) $(RAM_TEST).c $(BUILD_DIR)/ram-debug.o -o $(RAM_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
@@ -199,6 +202,13 @@ cartridge-test-build: $(CARTRIDGE_TEST).c $(BUILD_DIR)/cartridge-debug.o
 cartridge-test: cartridge-test-build
 	./$(CARTRIDGE_TEST)
 	echo "Cartridge test passed"
+
+cartridge-mbc-test-build: $(CARTRIDGE_MBC_TEST).c $(BUILD_DIR)/cartridge-debug.o
+	$(CC) $(CARTRIDGE_MBC_TEST).c $(BUILD_DIR)/cartridge-debug.o -o $(CARTRIDGE_MBC_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
+
+cartridge-mbc-test: cartridge-mbc-test-build
+	./$(CARTRIDGE_MBC_TEST)
+	echo "Cartridge MBC test passed"
 
 register-test-build: $(REGISTER_TEST).c $(BUILD_DIR)/register-debug.o
 	$(CC) $(REGISTER_TEST).c $(BUILD_DIR)/register-debug.o -o $(REGISTER_TEST) $(CC_FLAGS) $(CC_DEBUG_FLAGS)
@@ -257,6 +267,6 @@ define delete_executables_by_name
 endef
 
 clean:
-	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(REGISTER_TEST) $(CPU_TEST) $(APU_TEST) $(TIMING_TEST))
+	@$(call delete_executables_by_name, $(FORM_TEST) $(RAM_TEST) $(CARTRIDGE_TEST) $(CARTRIDGE_MBC_TEST) $(REGISTER_TEST) $(CPU_TEST) $(APU_TEST) $(TIMING_TEST))
 	rm -rf $(BUILD_DIR)
 	rm -f dmg dmg.exe

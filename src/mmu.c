@@ -58,11 +58,11 @@ struct AddressTranslationResult translate_address(uint16_t address)
         result.address = address;
         result.type    = CARTRIDGE;
     }
-    // // External RAM: from cartridge
-    // else if (address >= 0xA000 && address <= 0xBFFF) {
-    //     result.address = address;
-    //     result.type    = CARTRIDGE;
-    // }
+    // External RAM: from cartridge
+    else if (address >= 0xA000 && address <= 0xBFFF) {
+        result.address = address;
+        result.type    = CARTRIDGE;
+    }
     // Video RAM: from ppu
     else if (address >= 0x8000 && address <= 0x9FFF) {
         result.address = address;
@@ -115,6 +115,11 @@ static void mmu_set_joypad_selection(struct MMU* mmu, uint8_t byte)
     mmu->ram->set_ram_byte(mmu->ram, JOYPAD_ADDRESS, 0xC0 | (byte & 0x30) | 0x0F);
 }
 
+static bool is_ppu_register(uint16_t address)
+{
+    return address >= LCDC_ADDRESS && address <= WX_ADDRESS && address != DMA_ADDRESS;
+}
+
 
 uint8_t mmu_get_byte(struct MMU* mmu, uint16_t address)
 {
@@ -130,6 +135,10 @@ uint8_t mmu_get_byte(struct MMU* mmu, uint16_t address)
 
     if (mmu->timer && address >= TIMER_DIV_ADDRESS && address <= TIMER_TAC_ADDRESS) {
         return mmu->timer->read_register(mmu->timer, address);
+    }
+
+    if (mmu->ppu && is_ppu_register(address)) {
+        return ppu_read_register(mmu->ppu, address);
     }
     
     // Handle unusable memory region
@@ -192,6 +201,11 @@ void mmu_set_byte(struct MMU* mmu, uint16_t address, uint8_t byte)
         return;
     }
 
+    if (mmu->ppu && is_ppu_register(address)) {
+        ppu_write_register(mmu->ppu, address, byte);
+        return;
+    }
+
     // Handle unusable memory region
     if (address >= 0xFEA0 && address <= 0xFEFF) {
         return; // Writes to this region have no effect
@@ -227,36 +241,13 @@ void DMA(struct MMU* mmu, uint8_t source_bank)
 
 uint16_t mmu_get_word(struct MMU* mmu, uint16_t address)
 {
-    // Handle unusable memory region
-    if (address >= 0xFEA0 && address <= 0xFEFF) {
-        return 0x0000; // Reads from this region should return 0x00 on DMG
-    }
-
-    struct AddressTranslationResult result = translate_address(address);
-    if (result.type == CARTRIDGE) {
-        return mmu->cartridge->get_cartridge_word(mmu->cartridge, result.address);
-    }
-    else if (result.type == PPU_VRAM) {
-        return mmu->ppu->vram->vram_get_word(mmu->ppu->vram, result.address);
-    }
-    return mmu->ram->get_ram_word(mmu->ram, result.address);
+    uint8_t low  = mmu_get_byte(mmu, address);
+    uint8_t high = mmu_get_byte(mmu, (uint16_t)(address + 1));
+    return (uint16_t)(low | (high << 8));
 }
 
 void mmu_set_word(struct MMU* mmu, uint16_t address, uint16_t word)
 {
-    // Handle unusable memory region
-    if (address >= 0xFEA0 && address <= 0xFEFF) {
-        return; // Writes to this region have no effect
-    }
-
-    struct AddressTranslationResult result = translate_address(address);
-    if (result.type == CARTRIDGE) {
-        mmu->cartridge->set_cartridge_word(mmu->cartridge, result.address, word);
-    }
-    else if (result.type == PPU_VRAM) {
-        mmu->ppu->vram->vram_set_word(mmu->ppu->vram, result.address, word);
-    }
-    else {
-        mmu->ram->set_ram_word(mmu->ram, result.address, word);
-    }
+    mmu_set_byte(mmu, address, (uint8_t)(word & 0xFF));
+    mmu_set_byte(mmu, (uint16_t)(address + 1), (uint8_t)(word >> 8));
 }

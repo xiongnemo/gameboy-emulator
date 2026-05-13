@@ -21,6 +21,12 @@ int main(void)
     // test set_ram_word with byte address
     ram->set_ram_word(ram, 0xABCD, 0xEF01);
     assert(ram->get_ram_word(ram, 0xABCD) == 0xEF01);
+    // test final address on the 16-bit bus
+    ram->set_ram_byte(ram, 0xFFFF, 0x77);
+    assert(ram->get_ram_byte(ram, 0xFFFF) == 0x77);
+    ram->set_ram_word(ram, 0xFFFE, 0xBEEF);
+    assert(ram->get_ram_byte(ram, 0xFFFE) == 0xEF);
+    assert(ram->get_ram_byte(ram, 0xFFFF) == 0xBE);
 
     // free ram
     free(ram);

@@ -79,6 +79,11 @@ extern struct EmulatorConfig config;
 #define CONTROLLER_MBC1_RAM_BATTERY 0x03
 #define CONTROLLER_MBC2        0x05
 #define CONTROLLER_MBC2_BATTERY 0x06
+#define CONTROLLER_ROM_RAM     0x08
+#define CONTROLLER_ROM_RAM_BATTERY 0x09
+#define CONTROLLER_MMM01       0x0B
+#define CONTROLLER_MMM01_RAM   0x0C
+#define CONTROLLER_MMM01_RAM_BATTERY 0x0D
 #define CONTROLLER_MBC3_TIMER_BATTERY 0x0F
 #define CONTROLLER_MBC3_TIMER_RAM_BATTERY 0x10
 #define CONTROLLER_MBC3        0x11
@@ -90,6 +95,36 @@ extern struct EmulatorConfig config;
 #define CONTROLLER_MBC5_RUMBLE 0x1C
 #define CONTROLLER_MBC5_RUMBLE_RAM 0x1D
 #define CONTROLLER_MBC5_RUMBLE_RAM_BATTERY 0x1E
+#define CONTROLLER_MBC6        0x20
+#define CONTROLLER_MBC7_SENSOR_RUMBLE_RAM_BATTERY 0x22
+#define CONTROLLER_POCKET_CAMERA 0xFC
+#define CONTROLLER_BANDAI_TAMA5 0xFD
+#define CONTROLLER_HUC3        0xFE
+#define CONTROLLER_HUC1_RAM_BATTERY 0xFF
+
+enum CartridgeMapper
+{
+    CARTRIDGE_MAPPER_UNSUPPORTED = 0,
+    CARTRIDGE_MAPPER_ROM_ONLY,
+    CARTRIDGE_MAPPER_MBC1,
+    CARTRIDGE_MAPPER_MBC2,
+    CARTRIDGE_MAPPER_MBC3,
+    CARTRIDGE_MAPPER_MBC5
+};
+
+struct CartridgeFeature
+{
+    uint8_t              type;
+    const char*          name;
+    enum CartridgeMapper mapper;
+    bool                 has_ram;
+    bool                 has_battery;
+    bool                 has_timer;
+    bool                 has_rumble;
+    bool                 has_sensor;
+    bool                 has_camera;
+    bool                 unsupported_special_hardware;
+};
 
 struct Cartridge
 {
@@ -105,21 +140,40 @@ struct Cartridge
     // Dynamic ROM data (for larger ROMs)
     uint8_t* rom_data;
     size_t   rom_size;
+    char*    rom_path;
+    uint64_t rom_hash;
 
     // Dynamic RAM data (for cartridge RAMs)
     uint8_t* ram_data;
     size_t   ram_size;
     bool     ram_enabled;
+    bool     ram_dirty;
+    char*    save_path;
+    char*    rtc_path;
 
     // MBC2 internal RAM (512 x 4 bits)
-    uint8_t mbc2_ram[256];  // 512 nibbles stored as 256 bytes
+    uint8_t mbc2_ram[512];  // 512 nibbles stored as bytes with upper bits forced on read
     bool    mbc2_ram_enabled;
 
     // Controller type
     uint8_t controller_type;
+    struct CartridgeFeature features;
+
+    // MBC1 bank registers
+    uint8_t mbc1_rom_bank_low5;
+    uint8_t mbc1_bank_high2;
+    uint8_t mbc1_banking_mode;
 
     // MBC5 extended ROM banking
     uint16_t mbc5_rom_bank;  // 9-bit ROM bank for MBC5
+
+    // MBC3 RTC state
+    uint8_t rtc_selected_register;
+    uint8_t rtc_registers[5];
+    uint8_t rtc_latched_registers[5];
+    bool    rtc_latched;
+    uint8_t rtc_latch_previous;
+    time_t  rtc_last_update;
 
     // Rumble motor (for rumble carts)
     bool rumble_motor_on;
@@ -129,7 +183,7 @@ struct Cartridge
     // alternative RAM bank id
     uint8_t ram_alternative_bank;
     // ROM bank count
-    uint8_t rom_attributes_bank_count;
+    uint16_t rom_attributes_bank_count;
     // RAM bank count
     uint8_t ram_attributes_bank_count;
     // RAM bank size in kb
@@ -188,6 +242,9 @@ void cartridge_set_cartridge_word(struct Cartridge* cartridge, uint16_t address,
 
 // check cartridge type
 bool check_cartridge_type(struct Cartridge* cartridge);
+bool cartridge_load_battery_save(struct Cartridge* cartridge);
+bool cartridge_flush_battery_save(struct Cartridge* cartridge);
+const struct CartridgeFeature* cartridge_get_feature(uint8_t controller_type);
 
 // create cartridge
 struct Cartridge* create_cartridge();

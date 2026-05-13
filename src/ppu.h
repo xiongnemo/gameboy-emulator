@@ -227,6 +227,7 @@ struct PPU
     uint8_t stat;
     uint8_t scx;
     uint8_t scy;
+    uint8_t lyc;
     uint8_t wy;
     uint8_t wx;
     uint8_t bgp;
@@ -301,6 +302,9 @@ void ppu_set_ly(struct PPU* self, uint8_t ly);
 void ppu_step(struct PPU* self, uint8_t m_cycles);
 // consume a completed emulated frame
 bool ppu_consume_frame_ready(struct PPU* self);
+// PPU register access routed through the MMU
+uint8_t ppu_read_register(struct PPU* self, uint16_t address);
+void    ppu_write_register(struct PPU* self, uint16_t address, uint8_t value);
 
 // PPU States
 // OAM Search   
